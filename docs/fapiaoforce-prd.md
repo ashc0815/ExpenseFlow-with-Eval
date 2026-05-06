@@ -928,4 +928,198 @@ default_policy_id = Column(String(64), ForeignKey("policies.id"), nullable=True)
 
 ---
 
+## 附录 C · Airwallex 风格修正案（Entity-First 模型）
+
+> **状态**: Amendment / 增量补丁，不重写正文。本节在 PRD 主体合并后追加，记录"如果按 Airwallex 的 Entity + User Roles 模型重新做顶层抽象，PRD 哪些章节会变"。
+>
+> **决策状态**: 未决。本附录仅为设计选项 B，与正文 §3 三层前缀（G_/C_/D_）并存，由 PM 决定走哪条。
+
+### C.1 核心区别一句话
+
+| 维度 | 正文方案（Concur 风格） | 本附录方案（Airwallex 风格） |
+|---|---|---|
+| 顶层抽象 | Customer / Company / Department（三层 Group） | **Entity（法人实体）= 唯一锚点** |
+| 用户归属 | User → Group → Policy | User → **Entity** → Role → Policy |
+| 政策挂载 | 任一层 Group 都能挂 Policy（继承链） | Policy 默认挂在 Entity 上，可选下沉 Department |
+| 集团跨主体 | 用 Customer/Company 层模拟 | 显式 "Group of Entities"（可选包装层）|
+| 税法对应 | 抽象，需要再绕一层映射回法人 | **直接对应营业执照 / 纳税号 / 增值税身份** |
+
+### C.2 为什么 Airwallex 模型对中国市场更贴
+
+中国税务现实里有几个**硬约束**，正文的"Group"抽象需要靠规则补，而 Airwallex 的 Entity 模型直接命中：
+
+1. **发票抬头 = 法人**：发票抬头必须是某个具体法人实体，不是"集团"或"部门"。
+2. **增值税身份按法人区分**：一般纳税人 vs 小规模，税率（13% / 9% / 6%）按法人确定。
+3. **关联交易需要披露**：A 法人员工出差，B 法人付款 → 关联交易，必须可追溯。
+4. **跨主体报销受限**：内控合规要求很多场景下不允许跨法人报销。
+5. **审计追溯到法人**：年报、税务稽查、外部审计，单位都是法人。
+
+正文方案里这些只能写成 Policy rule（"发票抬头校验"是 §5.9 的检查项之一）。Airwallex 方案里它们升级成**系统不变量**——拿不到合法的 Entity 绑定，连数据写入都进不来。
+
+### C.3 修订后的层级结构
+
+```
+集团 (Group of Entities, 可选)              ← 共享政策的容器（多法人企业才需要）
+  └─ 法人实体 Entity (必填, 锚定营业执照号 + 纳税号)
+       └─ 部门 / 成本中心 (可选)              ← 部门预算 / 审批路由
+            └─ 用户 + Role
+```
+
+对比正文 §3.1 的三层前缀（`G_` / `C_` / `D_`），本附录的命名收敛到两层：
+
+| 正文前缀 | 含义 | 本附录前缀 | 含义 |
+|---|---|---|---|
+| `G_` | Customer（集团 / 客户）| `GE_`（可选）| Group of Entities（集团包装）|
+| `C_` | Company（公司，语义模糊）| **`E_`（强制）** | **Entity（法人，绑定营业执照）** |
+| `D_` | Department（部门）| `D_` | Department（不变）|
+
+> ⭐ 关键变化：正文的 `C_ Company` **语义模糊**——"公司"在中国既能指法人也能指 BU。Airwallex 模型把它锁死为"法人实体"，消除歧义。
+
+### C.4 §3.2 主数据 cascade 简化
+
+正文 §3.2 的回退链：
+```
+Department → Company → Customer → Default
+```
+
+本附录方案：
+```
+Department → Entity → (可选 Group) → Default
+```
+
+少一层。Entity 必填，所以"找不到 Entity"的分支不存在；Group 可选，多数中小客户根本不用。
+
+### C.5 §3.3 Policy 设计调整
+
+| 正文 | 本附录 |
+|---|---|
+| Policy 可挂在 G/C/D 任一层 | Policy 默认挂 Entity（必填）；Department override 可选；Group of Entities 提供"模板" |
+| 继承优先级：D > C > G > Default | 优先级：D > E > GE > Default |
+| 跨 Customer 共享 Policy 需要复制 | 跨 Entity 共享 Policy 通过 GE（Group of Entities）下发 |
+
+**实际配置体验**：80% 的客户只配一个 Entity 就够了，连 GE 都不需要——比正文方案少一个抽象层级。
+
+### C.6 §5.9 合规前置检查升级
+
+正文 §5.9 把"发票抬头校验"列为合规检查的一项 rule。本附录把它升级成**写入前不变量**：
+
+```python
+# 正文方案（rule-based, post-hoc）
+if invoice.title != user.company.legal_name:
+    violations.append(InvoiceTitleMismatch(...))
+
+# 本附录方案（invariant, pre-write）
+if invoice.title_legal_id != user.entity.business_license_id:
+    raise InvariantViolation(  # 数据库层拒收，连 draft 都进不来
+        "Invoice title legal_id must match user's entity license_id"
+    )
+```
+
+差别：rule 走完审批后才发现违规要打回；invariant 在录入阶段就拒收，员工根本提交不了。
+
+### C.7 §4.1 Header 字段调整
+
+| 正文字段 | 本附录字段 |
+|---|---|
+| `customer_id` (FK G_) | （删除） |
+| `company_id` (FK C_) | `entity_id` (FK E_, **必填且不可改**) |
+| `department_id` (FK D_) | `department_id` (FK D_, 可选) |
+| - | `payer_entity_id`（付款法人，**默认 = entity_id**；不一致即关联交易）|
+| - | `is_inter_entity` (computed: `entity_id ≠ payer_entity_id`) |
+
+新增的 `payer_entity_id` 让"跨主体报销"成为**显式一等流程**，而不是正文方案里靠规则补的特殊场景。
+
+### C.8 §8 数据库 Schema 增量调整
+
+正文 §8 的 `groups` 表替换为 `entities` 表 + 可选 `entity_groups` 表：
+
+```sql
+-- 取代正文的 groups 表
+CREATE TABLE entities (
+    id TEXT PRIMARY KEY,                    -- E_ACME_BJ_001
+    legal_name TEXT NOT NULL,
+    business_license_id TEXT NOT NULL UNIQUE,  -- 营业执照号
+    tax_id TEXT NOT NULL UNIQUE,            -- 纳税人识别号
+    vat_taxpayer_type TEXT NOT NULL,        -- general | small_scale
+    default_currency TEXT NOT NULL DEFAULT 'CNY',
+    entity_group_id TEXT REFERENCES entity_groups(id),  -- 可选
+    created_at TIMESTAMP NOT NULL,
+    UNIQUE (business_license_id)
+);
+
+-- 可选包装层（多法人集团才用）
+CREATE TABLE entity_groups (
+    id TEXT PRIMARY KEY,                    -- GE_ACME_HOLDING
+    name TEXT NOT NULL,
+    parent_group_id TEXT REFERENCES entity_groups(id)  -- 不超过 2 层嵌套
+);
+
+-- departments 不变，但 FK 改指 entities
+ALTER TABLE departments DROP COLUMN company_id;
+ALTER TABLE departments ADD COLUMN entity_id TEXT NOT NULL REFERENCES entities(id);
+
+-- users 增加强制 Entity 绑定
+ALTER TABLE users ADD COLUMN entity_id TEXT NOT NULL REFERENCES entities(id);
+```
+
+发票抬头校验直接成为 DB constraint：
+
+```sql
+-- 数据库层不变量，正文方案靠规则补
+ALTER TABLE submissions ADD CONSTRAINT invoice_title_matches_entity
+CHECK (
+    invoice_title_license_id IS NULL  -- 允许未识别（OCR 失败等）
+    OR invoice_title_license_id = (
+        SELECT business_license_id FROM entities WHERE id = entity_id
+    )
+);
+```
+
+### C.9 失去什么 / 何时不该选这条路
+
+诚实列下来这条路的代价：
+
+| 损失 | 严重程度 | Mitigation |
+|---|---|---|
+| 单一法人 + 多 BU 的灵活性 | 中 | 用 Department 层做 BU 区分（够用） |
+| 跨 Customer 共享 policy | 低 | 通过 Entity Group 下发模板 |
+| 矩阵组织（项目跨法人）的天然支持 | 中 | 用 Cost Object（项目）+ Allocation 替代（正文 §4.3 已有） |
+| 现有 PRD 章节改动量 | 高 | 见本附录 §C.10 |
+
+**不该选这条路的场景**：
+- 客户根本不是多法人结构（例如单一公司多 BU）→ Entity 退化成 1 个，反而冗余
+- 跨国客户，主战场不是中国 → 营业执照 / 增值税锚点对不上
+- 已经按正文实施且数据上线 → 迁移成本不值
+
+### C.10 落地路径（如果决定切换）
+
+不是重写 PRD，而是**增量替换**：
+
+1. **设计期（本附录所在阶段）**：保留正文，由 PM 评估是否切换。
+2. **实施前**：如果选切换，更新正文 §3.1（前缀规则）、§3.2（cascade）、§3.3（Policy 层级）、§4.1（Header 字段）、§8（schema），其他章节大体不动（Workflow 引擎、合规检查、UI 升级清单与顶层抽象解耦）。
+3. **代码层影响**：现有 `backend/db/store.py` 的 `Submission.company_id` → `Submission.entity_id`，约 15 处引用；其他 AI 模块（`agent/*.py`）零改动。
+4. **配置层影响**：`config/policies/` 的 key 从 `C_*` 改 `E_*`，正则替换即可。
+
+### C.11 决策建议
+
+**默认推荐切到 Airwallex 模型**，理由：
+- 中国市场卖给多集团企业，税法现实就是 Entity-first
+- 抽象层级减少（三层 → 两层 + 可选 wrapper）
+- 发票抬头从规则升级成不变量，是真正的合规护城河
+- Concur 三层模型对单法人客户是过度设计
+
+**但只有以下条件全满足才切换**：
+- [ ] PM 确认目标客户主要是多法人集团（不是单一公司多 BU）
+- [ ] 第一批客户至少 1 家有 ≥3 个法人主体
+- [ ] 接受正文 §3 / §4 / §8 的修订（约 200 行 PRD 改动）
+- [ ] 接受 README 把"三层前缀（G_/C_/D_）"换成"Entity-first（E_/D_）"的对外口径
+
+如果其中任一不满足，**保留正文方案**——切换的成本会大于收益。
+
+---
+
+*本附录是设计选项 B，记录在主 PRD 内便于对比，不取代正文。决策后由 PM 在本附录开头标注 ✅ 已采纳 / ❌ 已放弃，并在 git history 留痕。*
+
+---
+
 *本 PRD 故意区别于"实施计划"——它是产品设计的**契约**，不是排期表。当团队决定要做 Fapiaoforce 时，按此 PRD 执行；不做时，作为"我们想清楚了什么"的 portfolio 证据。*
