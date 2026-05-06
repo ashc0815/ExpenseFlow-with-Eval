@@ -91,25 +91,49 @@
   // This is purely cosmetic — backend re-determines role server-side.
   function _isApprover() {
     try {
+      // mock auth also stores a `mock_role` key; check both that and
+      // auth.getUser() to be robust against load-order edge cases.
+      const stored = (typeof localStorage !== "undefined")
+        ? localStorage.getItem("mock_role") : null;
+      if (stored === "manager" || stored === "finance_admin") return true;
       const u = window.auth && window.auth.getUser && window.auth.getUser();
       const roles = (u && u.roles) || [];
       return roles.includes("manager") || roles.includes("finance_admin");
     } catch (_) { return false; }
   }
-  const _approver = _isApprover();
-  const welcomeText = _t(_approver ? "ai.welcome-manager" : "ai.welcome-qa").replace(/\n/g, "<br>");
-  const placeholderText = _t(_approver ? "ai.placeholder-manager" : "ai.placeholder-qa");
-  const suggestionsHtml = _approver
-    ? `
+  function _suggestionsHtml(approver) {
+    return approver
+      ? `
         <button data-q="${_t("ai.sug-mgr-why-q")}">${_t("ai.sug-mgr-why")}</button>
         <button data-q="${_t("ai.sug-mgr-queue-q")}">${_t("ai.sug-mgr-queue")}</button>
         <button data-q="${_t("ai.sug-mgr-team-q")}">${_t("ai.sug-mgr-team")}</button>
         <button data-q="${_t("ai.sug-policy-q")}">${_t("ai.sug-policy")}</button>`
-    : `
+      : `
         <button data-q="${_t("ai.sug-monthly-q")}">${_t("ai.sug-monthly")}</button>
         <button data-q="${_t("ai.sug-budget-q")}">${_t("ai.sug-budget")}</button>
         <button data-q="${_t("ai.sug-dup-q")}">${_t("ai.sug-dup")}</button>
         <button data-q="${_t("ai.sug-policy-q")}">${_t("ai.sug-policy")}</button>`;
+  }
+  function _renderRoleAwareUI() {
+    const approver = _isApprover();
+    const welcomeText = _t(approver ? "ai.welcome-manager" : "ai.welcome-qa").replace(/\n/g, "<br>");
+    const placeholderText = _t(approver ? "ai.placeholder-manager" : "ai.placeholder-qa");
+    const msgBox = document.getElementById("ai-messages");
+    const sugBox = document.getElementById("ai-suggestions");
+    const inp    = document.getElementById("ai-input");
+    if (msgBox && msgBox.children.length <= 1) {
+      // Only re-render the welcome when the chat is fresh (one assistant
+      // greeting bubble). Don't clobber an in-progress conversation.
+      msgBox.innerHTML = `<div class="ai-msg assistant">${welcomeText}</div>`;
+    }
+    if (sugBox) sugBox.innerHTML = _suggestionsHtml(approver);
+    if (inp)    inp.placeholder = placeholderText;
+  }
+
+  const _approverInitial = _isApprover();
+  const welcomeText = _t(_approverInitial ? "ai.welcome-manager" : "ai.welcome-qa").replace(/\n/g, "<br>");
+  const placeholderText = _t(_approverInitial ? "ai.placeholder-manager" : "ai.placeholder-qa");
+  const suggestionsHtml = _suggestionsHtml(_approverInitial);
 
   const wrapper = document.createElement("div");
   wrapper.innerHTML = `
@@ -149,6 +173,10 @@
     document.getElementById("ai-drawer").classList.toggle("open");
     document.getElementById("ai-overlay").classList.toggle("open");
     if (document.getElementById("ai-drawer").classList.contains("open")) {
+      // Re-evaluate role on every open. If the user switched role in
+      // another tab and came back, the drawer reflects it without page
+      // reload.
+      _renderRoleAwareUI();
       document.getElementById("ai-input").focus();
     }
   }
