@@ -57,7 +57,7 @@ router = APIRouter()
 # 前还会二次校验，任何试图调用白名单外 tool 的请求都会被拒绝。
 # ═══════════════════════════════════════════════════════════════════
 
-AgentRole = Literal["employee_submit", "employee", "manager_explain"]
+AgentRole = Literal["employee_submit", "employee", "manager_explain", "manager"]
 
 _TOOL_DEFS: dict[str, dict] = {
     "extract_receipt_fields": {
@@ -220,6 +220,31 @@ _TOOL_DEFS: dict[str, dict] = {
             "required": [],
         },
     },
+    "get_pending_approval_queue": {
+        "name": "get_pending_approval_queue",
+        "description": "（仅经理/财务可用）获取当前角色的待审报销单队列。manager 角色返回 status=pending 的报销单；finance_admin 返回 status=manager_approved 的。每条带：employee、行数、合计金额、最高风险分、最差 tier、提交后等待天数。",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer", "description": "返回前 N 条，按等待时间降序，默认 20"},
+                "min_risk_score": {"type": "number", "description": "可选：只返回最高风险分 ≥ 该值的，用于'我那些高风险的'类问题"},
+            },
+            "required": [],
+        },
+    },
+    "get_team_spend_summary": {
+        "name": "get_team_spend_summary",
+        "description": "（仅经理/财务可用）某 department 在指定 period 内的报销聚合：总额（CNY）、笔数、按 category 分组、top-5 员工。manager 默认本部门；finance 可查任意 department，不传 department 则返回全公司。",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "period": {"type": "string", "enum": ["month", "quarter"], "description": "month=当前自然月，quarter=当前自然季度"},
+                "department": {"type": "string", "description": "部门名（可选）。manager 即便传了也会被忽略，强制本部门。"},
+                "category": {"type": "string", "description": "可选 category 过滤：meal/transport/accommodation/entertainment/other"},
+            },
+            "required": ["period"],
+        },
+    },
 }
 
 TOOL_REGISTRY: dict[str, list[str]] = {
@@ -259,6 +284,20 @@ TOOL_REGISTRY: dict[str, list[str]] = {
     "manager_explain": [
         "get_submission_for_review",
         "get_employee_submission_history",
+    ],
+    # ── manager ──────────────────────────────────────────────────────
+    # Multi-turn drawer chat for managers/finance reviewing reports. Same
+    # /api/chat/message entrypoint as `employee` — backend picks role from
+    # ctx.role, never trusts the client. Read-only by design: approve /
+    # reject / pay are still UI-only (legal/compliance weight).
+    # Tool surface mirrors what Ramp Copilot / Concur Joule expose to
+    # approvers — single-submission drill-down + queue-level analytics.
+    "manager": [
+        "get_submission_for_review",
+        "get_employee_submission_history",
+        "get_pending_approval_queue",
+        "get_team_spend_summary",
+        "get_policy_rules",
     ],
 }
 
@@ -893,6 +932,182 @@ async def tool_get_policy_rules(
     }
 
 
+async def tool_get_pending_approval_queue(
+    args: dict, ctx: UserContext, db: AsyncSession, draft_id: str
+) -> dict:
+    """只读：当前角色对应的待审 Report 列表 + 行级风险概要。
+
+    manager → status=pending（员工刚提交）
+    finance_admin → status=manager_approved（经理批了，等财务）
+
+    仅对 manager / finance_admin 角色开放；其他角色拿到 error。
+    """
+    if ctx.role not in ("manager", "finance_admin"):
+        return {"error": "权限不足：仅经理/财务可查看待审队列"}
+
+    target_status = "pending" if ctx.role == "manager" else "manager_approved"
+    limit = int(args.get("limit") or 20)
+    min_risk = args.get("min_risk_score")
+    try:
+        min_risk_val = float(min_risk) if min_risk is not None else None
+    except (TypeError, ValueError):
+        min_risk_val = None
+
+    from backend.db.store import Report, list_report_submissions
+    from sqlalchemy import select as _select
+    result = await db.execute(
+        _select(Report)
+        .where(Report.status == target_status)
+        .order_by(Report.submitted_at.asc().nullsfirst())
+    )
+    reports = list(result.scalars().all())
+
+    items = []
+    today = date.today()
+    for r in reports:
+        subs = await list_report_submissions(db, r.id)
+        if not subs:
+            continue
+        emp = await get_employee(db, r.employee_id)
+        max_risk = max(
+            (float(s.risk_score) for s in subs if s.risk_score is not None),
+            default=0.0,
+        )
+        if min_risk_val is not None and max_risk < min_risk_val:
+            continue
+        tier_order = {"T4": 4, "T3": 3, "T2": 2, "T1": 1}
+        worst_tier = None
+        for s in subs:
+            if s.tier and tier_order.get(s.tier, 0) > tier_order.get(worst_tier, 0):
+                worst_tier = s.tier
+        total_amount = sum(float(s.amount) for s in subs)
+        days_waiting = None
+        if r.submitted_at:
+            try:
+                days_waiting = (today - r.submitted_at.date()).days
+            except Exception:
+                days_waiting = None
+        items.append({
+            "report_id": r.id,
+            "title": r.title,
+            "employee_id": r.employee_id,
+            "employee_name": emp.name if emp else r.employee_id,
+            "department": emp.department if emp else None,
+            "line_count": len(subs),
+            "total_amount": round(total_amount, 2),
+            "max_risk_score": round(max_risk, 1),
+            "worst_tier": worst_tier,
+            "days_waiting": days_waiting,
+            "submitted_at": r.submitted_at.isoformat() if r.submitted_at else None,
+        })
+
+    items.sort(key=lambda x: (-(x["max_risk_score"] or 0), -(x["days_waiting"] or 0)))
+    items = items[:limit]
+    return {
+        "role": ctx.role,
+        "queue_status": target_status,
+        "total_count": len(items),
+        "items": items,
+    }
+
+
+async def tool_get_team_spend_summary(
+    args: dict, ctx: UserContext, db: AsyncSession, draft_id: str
+) -> dict:
+    """只读：某 department 在 period 内的报销聚合（CNY），by category + top employees。
+
+    manager → 强制本部门（无视 args.department）
+    finance_admin → 任意 department；不传则全公司
+
+    period: month=当前自然月，quarter=当前自然季度
+    """
+    if ctx.role not in ("manager", "finance_admin"):
+        return {"error": "权限不足：仅经理/财务可查看团队总览"}
+
+    period = args.get("period")
+    if period not in ("month", "quarter"):
+        return {"error": "period 必须是 'month' 或 'quarter'"}
+
+    today = date.today()
+    if period == "month":
+        start = today.replace(day=1)
+        label = f"{today.year}-{today.month:02d}"
+    else:
+        q_start_month = ((today.month - 1) // 3) * 3 + 1
+        start = today.replace(month=q_start_month, day=1)
+        label = f"{today.year}-Q{(today.month - 1) // 3 + 1}"
+    start_iso = start.isoformat()
+
+    requested_dept = (args.get("department") or "").strip() or None
+    category_filter = (args.get("category") or "").strip() or None
+
+    if ctx.role == "manager":
+        viewer = await get_employee(db, ctx.user_id)
+        scoped_dept = viewer.department if viewer else None
+        if scoped_dept is None:
+            return {"error": "无法确定 manager 所属部门，请联系管理员"}
+    else:
+        scoped_dept = requested_dept
+
+    from backend.services.fx_service import convert as fx_convert
+    page = await list_submissions(db, page=1, page_size=2000)
+    home_cur = "CNY"
+
+    total_home = 0.0
+    count = 0
+    by_cat: dict[str, dict] = {}
+    by_emp: dict[str, dict] = {}
+
+    for s in page["items"]:
+        if (s.date or "") < start_iso and not (s.created_at and s.created_at.date() >= start):
+            continue
+        if scoped_dept is not None and (s.department or None) != scoped_dept:
+            continue
+        if category_filter and (s.category or "") != category_filter:
+            continue
+        orig_amt = float(s.amount)
+        currency = s.currency or home_cur
+        if s.exchange_rate is not None:
+            home_amt = round(orig_amt * float(s.exchange_rate), 2)
+        elif currency != home_cur:
+            home_amt = fx_convert(orig_amt, currency, home_cur)
+        else:
+            home_amt = orig_amt
+        total_home += home_amt
+        count += 1
+        cat = s.category or "other"
+        bucket = by_cat.setdefault(cat, {"category": cat, "amount_home": 0.0, "count": 0})
+        bucket["amount_home"] += home_amt
+        bucket["count"] += 1
+        emp_bucket = by_emp.setdefault(s.employee_id, {
+            "employee_id": s.employee_id, "amount_home": 0.0, "count": 0,
+        })
+        emp_bucket["amount_home"] += home_amt
+        emp_bucket["count"] += 1
+
+    top_emps = sorted(by_emp.values(), key=lambda x: x["amount_home"], reverse=True)[:5]
+    for e in top_emps:
+        emp = await get_employee(db, e["employee_id"])
+        e["employee_name"] = emp.name if emp else e["employee_id"]
+        e["amount_home"] = round(e["amount_home"], 2)
+
+    return {
+        "period": period,
+        "period_label": label,
+        "department": scoped_dept,
+        "department_scope": "self" if ctx.role == "manager" else ("all" if scoped_dept is None else "specified"),
+        "category_filter": category_filter,
+        "home_currency": home_cur,
+        "total_home": round(total_home, 2),
+        "count": count,
+        "by_category": sorted(
+            [{**b, "amount_home": round(b["amount_home"], 2)} for b in by_cat.values()],
+            key=lambda x: x["amount_home"], reverse=True,
+        ),
+        "top_employees": top_emps,
+    }
+
+
 TOOL_HANDLERS = {
     "extract_receipt_fields":            tool_extract_receipt_fields,
     "suggest_category":                  tool_suggest_category,
@@ -907,6 +1122,8 @@ TOOL_HANDLERS = {
     "check_budget_status":               tool_check_budget_status,
     "get_budget_summary":                tool_get_budget_summary,
     "get_policy_rules":                  tool_get_policy_rules,
+    "get_pending_approval_queue":        tool_get_pending_approval_queue,
+    "get_team_spend_summary":            tool_get_team_spend_summary,
 }
 
 
@@ -955,6 +1172,8 @@ class MockLLM(BaseLLM):
         # user explicitly asks). Real LLM is recommended for this role.
         if agent_role == "employee":
             return self._qa_turn(messages)
+        if agent_role == "manager":
+            return self._manager_turn(messages)
         # 默认：employee_submit 脚本
         # 扫描历史找：最后一条 user 消息、是否有 extract 结果、是否有 dup 结果、是否已有 suggest 结果
         last_user_idx = self._find_last(messages, role="user", text_not_tool=True)
@@ -1114,6 +1333,177 @@ class MockLLM(BaseLLM):
             ),
             stop_reason="end_turn",
         )
+
+    def _manager_turn(self, messages: list[dict]) -> LLMResponse:
+        """经理 / 财务的 drawer chat 规则脚本。
+
+        三类高频意图：
+        1. "为什么风险高 / why" + 当前报销单上下文 → get_submission_for_review
+        2. "待审 / 队列 / 等我批" → get_pending_approval_queue
+        3. "团队本月花 / 部门" → get_team_spend_summary
+        """
+        review = self._find_tool_result(messages, "get_submission_for_review")
+        queue  = self._find_tool_result(messages, "get_pending_approval_queue")
+        team   = self._find_tool_result(messages, "get_team_spend_summary")
+
+        if review is not None:
+            return LLMResponse(text=self._fmt_review(review), stop_reason="end_turn")
+        if queue is not None:
+            return LLMResponse(text=self._fmt_queue(queue), stop_reason="end_turn")
+        if team is not None:
+            return LLMResponse(text=self._fmt_team(team), stop_reason="end_turn")
+
+        last_idx = self._find_last(messages, role="user", text_not_tool=True)
+        text = self._extract_text(messages[last_idx]).lower() if last_idx is not None else ""
+
+        # Pull the highest-risk line_id out of the injected page context, if any.
+        ctx_line_id = None
+        ctx_text = ""
+        for m in messages:
+            content = self._extract_text(m)
+            if "[当前上下文]" in content:
+                ctx_text = content
+                break
+        if ctx_text:
+            best_risk = -1.0
+            for ln in ctx_text.splitlines():
+                if "line#" not in ln or "id=" not in ln:
+                    continue
+                try:
+                    sid = ln.split("id=", 1)[1].split(" |", 1)[0].strip()
+                except IndexError:
+                    continue
+                risk_val = -1.0
+                if "risk=" in ln:
+                    try:
+                        risk_val = float(ln.split("risk=", 1)[1].split(" ", 1)[0])
+                    except ValueError:
+                        risk_val = -1.0
+                if risk_val > best_risk:
+                    best_risk = risk_val
+                    ctx_line_id = sid
+
+        why_kws    = ("为什么", "why", "原因", "怎么", "高风险", "风险", "解释")
+        queue_kws  = ("待审", "队列", "等我", "等审", "需要我", "queue", "pending", "approval")
+        team_kws   = ("团队", "部门", "team", "本月花", "本季度", "department", "支出")
+
+        if any(k in text for k in why_kws) and ctx_line_id:
+            return LLMResponse(
+                text="我去拉一下这张单的审计报告…",
+                tool_calls=[self._tool_call(
+                    "get_submission_for_review", {"submission_id": ctx_line_id},
+                )],
+                stop_reason="tool_use",
+            )
+        if any(k in text for k in queue_kws):
+            min_risk = 80.0 if any(k in text for k in ("高风险", "high risk", "高的")) else None
+            args = {"limit": 20}
+            if min_risk:
+                args["min_risk_score"] = min_risk
+            return LLMResponse(
+                text="我看一下你的待审队列…",
+                tool_calls=[self._tool_call("get_pending_approval_queue", args)],
+                stop_reason="tool_use",
+            )
+        if any(k in text for k in team_kws):
+            period = "quarter" if any(k in text for k in ("季度", "quarter", "本季", "这季")) else "month"
+            return LLMResponse(
+                text=f"我聚合一下你团队{'本季度' if period == 'quarter' else '本月'}的报销…",
+                tool_calls=[self._tool_call("get_team_spend_summary", {"period": period})],
+                stop_reason="tool_use",
+            )
+
+        return LLMResponse(
+            text=(
+                "你好！我是经理审批助手。你可以问我：\n\n"
+                "• 这张单为什么风险这么高？\n"
+                "• 我现在有哪些待审报销？\n"
+                "• 只看高风险（>=80）的待审报销\n"
+                "• 我团队本月花了多少？\n"
+                "• 报销政策是什么？"
+            ),
+            stop_reason="end_turn",
+        )
+
+    @staticmethod
+    def _fmt_review(r: dict) -> str:
+        if r.get("error"):
+            return f"读取失败：{r['error']}"
+        risk = r.get("risk_score")
+        tier = r.get("tier") or "-"
+        merchant = r.get("merchant") or "-"
+        amount = r.get("amount")
+        currency = r.get("currency") or ""
+        audit = r.get("audit_report") or {}
+        signals = audit.get("fraud_signals") or []
+        investigation = audit.get("investigation") or {}
+
+        lines = [
+            f"🔍 **{merchant}** · {currency} {amount} · 风险 **{risk}/100** ({tier})",
+            "",
+        ]
+        if signals:
+            lines.append("**触发的规则：**")
+            for s in signals[:5]:
+                rid = s.get("rule_id") or s.get("rule") or "?"
+                score = s.get("score", 0)
+                ev = s.get("evidence") or ""
+                lines.append(f"• `{rid}` (+{score})  {ev}")
+            lines.append("")
+        if investigation:
+            verdict = investigation.get("verdict", "-")
+            confidence = investigation.get("confidence", 0)
+            summary = investigation.get("summary") or ""
+            lines.append(f"**OODA 调查结论：** {verdict}（置信度 {confidence:.0%}）")
+            if summary:
+                lines.append(f"> {summary}")
+        if not signals and not investigation:
+            lines.append("（这笔没有触发任何欺诈规则，也没有触发 OODA 调查。风险分主要来自 ambiguity 维度。）")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _fmt_queue(q: dict) -> str:
+        if q.get("error"):
+            return f"查询失败：{q['error']}"
+        items = q.get("items") or []
+        scope = q.get("queue_status", "?")
+        if not items:
+            return f"📋 当前没有 status={scope} 的待审报销。"
+        lines = [f"📋 **{len(items)} 张待审报销**（{scope}）"]
+        for it in items[:10]:
+            risk = it.get("max_risk_score", 0) or 0
+            wait = it.get("days_waiting")
+            wait_str = f"已等 {wait}d" if wait is not None else ""
+            tier = it.get("worst_tier") or ""
+            lines.append(
+                f"• {it.get('employee_name', '-')} · ¥{it.get('total_amount', 0):,.0f} · "
+                f"{it.get('line_count', 0)} 笔 · risk={risk:.0f} {tier} · {wait_str}"
+            )
+        return "\n".join(lines)
+
+    @staticmethod
+    def _fmt_team(t: dict) -> str:
+        if t.get("error"):
+            return f"查询失败：{t['error']}"
+        label = t.get("period_label", "?")
+        dept = t.get("department") or "全公司"
+        total = t.get("total_home", 0)
+        count = t.get("count", 0)
+        cur = t.get("home_currency", "CNY")
+        lines = [f"📊 **{dept} · {label}**：{count} 笔，合计 **{cur} {total:,.2f}**"]
+        cats = t.get("by_category") or []
+        if cats:
+            lines.append("")
+            lines.append("**按类别：**")
+            for c in cats[:5]:
+                lines.append(f"• {c['category']}: {cur} {c['amount_home']:,.2f} ({c['count']} 笔)")
+        emps = t.get("top_employees") or []
+        if emps:
+            lines.append("")
+            lines.append("**Top 5 员工：**")
+            for e in emps:
+                lines.append(f"• {e.get('employee_name', '-')}: {cur} {e['amount_home']:,.2f} ({e['count']} 笔)")
+        return "\n".join(lines)
 
     @staticmethod
     def _fmt_summary(s: dict) -> str:
@@ -1963,22 +2353,32 @@ async def send_employee_chat(
     ctx: UserContext = Depends(require_auth),
     db: AsyncSession = Depends(get_db),
 ):
-    """Unified employee drawer — Concur/Expensify-style single entry point.
+    """Unified drawer chat — single endpoint, role chosen by ctx.role.
 
-    Routing: there's no routing. One endpoint, one agent, one tool set.
-    Security model:
-      - ``agent_role='employee'`` is hard-coded here; front-end cannot
-        escalate by tweaking a parameter.
-      - Every WRITE tool validates ownership + state INSIDE the tool (data-
-        level ACL). A hallucinated tool call still can't touch someone
-        else's data or an already-submitted report.
+    Routing: backend reads ``ctx.role`` and picks the agent_role + tool
+    whitelist; the client cannot escalate by sending a role parameter.
+      - ``employee`` / ``employee_submit`` → owner-scoped read + write
+      - ``manager`` → owner-bypassed read (queue / audit_report / team
+        analytics); zero write tools
+      - ``finance_admin`` → same as manager but queue scoped to
+        manager_approved state and team analytics is org-wide
+
+    Security model unchanged from prior:
+      - Every WRITE tool validates ownership + state INSIDE the tool
+        (data-level ACL). A hallucinated tool call still can't touch
+        someone else's data or an already-submitted report.
       - Tool whitelist excludes submit/approve/reject/pay entirely: AI
         never executes actions that carry legal/compliance weight.
-
-    Multi-tenant note for future: when the whitelist gains manager-read
-    tools (e.g. list_pending_approvals), each such tool must check
-    ``ctx.user_id`` is the approver of record for the target object.
+      - Manager/finance read tools bypass ``employee_id == ctx.user_id``
+        ownership check by design — that's the whole point of approver
+        access — but each tool re-asserts ``ctx.role`` server-side.
     """
+    # Map ctx.role → agent_role. Frontend can't override.
+    if ctx.role in ("manager", "finance_admin"):
+        agent_role: AgentRole = "manager"
+    else:
+        agent_role = "employee"
+
     messages_for_agent = list(body.messages or [])
 
     # If the caller passed page context (e.g. {report_id: ...}), inject a
@@ -1991,18 +2391,44 @@ async def send_employee_chat(
             report = await get_report(db, report_id)
             # Silent if lookup fails — the user can still chat about other
             # things. ACL per tool prevents any ability to act on it.
-            if report and report.employee_id == ctx.user_id:
+            #
+            # Visibility: employees see their own report; managers/finance
+            # see any report (their job). The owner check used to drop the
+            # context entirely for managers — that was the "AI 报销助手"
+            # giving generic answers about someone else's high-risk report.
+            is_owner = report and report.employee_id == ctx.user_id
+            is_approver = report and ctx.role in ("manager", "finance_admin")
+            if report and (is_owner or is_approver):
                 from backend.db.store import list_report_submissions
                 subs = await list_report_submissions(db, report_id)
                 ctx_text = (
                     f"[当前上下文] 打开的报销单: {report.title} "
-                    f"(id={report_id}, status={report.status}, {len(subs)} 笔)\n"
+                    f"(id={report_id}, status={report.status}, {len(subs)} 笔, "
+                    f"提交人={report.employee_id})\n"
                 )
+                if agent_role == "manager":
+                    max_risk = max(
+                        (float(s.risk_score) for s in subs if s.risk_score is not None),
+                        default=0.0,
+                    )
+                    has_investigation = any(
+                        (s.audit_report or {}).get("investigation") for s in subs
+                    )
+                    ctx_text += (
+                        f"[审批视角] 最高风险分={max_risk:.0f}/100"
+                        + (" · 已生成 OODA 调查报告" if has_investigation else "")
+                        + "。需要详细解释为何高风险时，调用 get_submission_for_review "
+                        f"读取 audit_report（含 fraud_signals + investigation）。\n"
+                    )
                 for i, s in enumerate(subs, 1):
+                    risk_hint = (
+                        f" | risk={float(s.risk_score):.0f} {s.tier or ''}"
+                        if s.risk_score is not None else ""
+                    )
                     ctx_text += (
                         f"  line#{i}: id={s.id} | merchant={s.merchant or '-'} | "
                         f"{s.currency or ''} {s.amount} | category={s.category or '-'} | "
-                        f"date={s.date or '-'}\n"
+                        f"date={s.date or '-'}{risk_hint}\n"
                     )
                 messages_for_agent = [{"role": "user", "content": ctx_text}] + messages_for_agent
 
@@ -2013,7 +2439,7 @@ async def send_employee_chat(
                 draft_id=None,
                 ctx=ctx,
                 db=db,
-                agent_role="employee",
+                agent_role=agent_role,
                 messages_history=messages_for_agent,
             ):
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
