@@ -165,6 +165,7 @@ Plus a **customer segmentation** doc that picks which segment to target first (5
 5. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — what production-grade requires (8 gaps)
 6. [`docs/customer-segmentation.md`](docs/customer-segmentation.md) — which segment to target first
 7. [`docs/integration-design.md`](docs/integration-design.md) — concrete NetSuite + Stripe + Excel-bridge designs
+8. [`docs/fapiaoforce-prd.md`](docs/fapiaoforce-prd.md) — Concur-style multi-group product spec for the China-enterprise vertical (the productization of Segment B)
 
 ---
 

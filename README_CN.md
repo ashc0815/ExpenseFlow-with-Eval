@@ -164,6 +164,7 @@ Prompt injection 能让 LLM 输出任何字符串。但**没有任何字符串**
 5. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — 工业级要求（8 个 gap）
 6. [`docs/customer-segmentation.md`](docs/customer-segmentation.md) — 应该先卖给谁
 7. [`docs/integration-design.md`](docs/integration-design.md) — NetSuite + Stripe + Excel-bridge 真 API 设计
+8. [`docs/fapiaoforce-prd.md`](docs/fapiaoforce-prd.md) — Concur-style 多集团产品 PRD（中国企业市场 Segment B 的产品化）
 
 ---
 
