@@ -78,12 +78,17 @@
       zh: "你好！我是报销助手，可以帮你：\n• 查询历史报销记录\n• 查看预算使用情况\n• 解答报销相关问题",
       en: "Hi! I'm your expense assistant. I can help you with:\n• Looking up past expenses\n• Checking budget usage\n• Answering expense policy questions"
     },
+    "ai.welcome-manager": {
+      zh: "你好！我是经理审批助手，可以帮你：\n• 解释这张单为什么风险高（fraud_signals + OODA 调查）\n• 列出当前待审报销 / 只看高风险\n• 团队 / 部门本月本季度支出汇总\n• 查询员工历史消费",
+      en: "Hi! I'm your approver assistant. I can help you:\n• Explain why this report is high-risk (fraud signals + OODA investigation)\n• List pending approvals / filter by high-risk only\n• Summarize team or department spend (month/quarter)\n• Query an employee's submission history"
+    },
     "ai.welcome-submit": {
       zh: "你好，我是报销助手 👋\n把发票拖到左侧或告诉我要报销什么，我帮你自动填写字段。",
       en: "Hi, I'm your expense assistant 👋\n\nDrag a receipt to the left, or tell me what to expense — I'll fill in the fields automatically."
     },
     "ai.placeholder-submit": { zh: "告诉我怎么帮你…",        en: "Tell me how I can help…"               },
     "ai.placeholder-qa":     { zh: "问我任何报销问题…",      en: "Ask me anything about expenses…"       },
+    "ai.placeholder-manager":{ zh: "问我审批 / 风险 / 团队相关…", en: "Ask about approvals / risk / team…" },
     "ai.send":               { zh: "发送",                   en: "Send"                                  },
     "ai.thinking":           { zh: "思考中…",                en: "Thinking…"                             },
     "ai.request-fail":       { zh: "请求失败: ",             en: "Request failed: "                      },
@@ -95,6 +100,12 @@
     "ai.sug-dup-q":          { zh: "最近有重复报销吗？",     en: "Any duplicate expenses recently?"      },
     "ai.sug-policy":         { zh: "报销政策",               en: "Policy"                                },
     "ai.sug-policy-q":       { zh: "交通费报销政策是什么？", en: "What's the transport expense policy?"  },
+    "ai.sug-mgr-why":        { zh: "为什么风险高",           en: "Why high risk"                         },
+    "ai.sug-mgr-why-q":      { zh: "请问这里为什么风险级别这么高？", en: "Why is this report flagged as high-risk?" },
+    "ai.sug-mgr-queue":      { zh: "高风险待审",             en: "High-risk queue"                       },
+    "ai.sug-mgr-queue-q":    { zh: "只看高风险（>=80）的待审报销", en: "Show only high-risk pending approvals (>=80)" },
+    "ai.sug-mgr-team":       { zh: "团队本月支出",           en: "Team monthly spend"                    },
+    "ai.sug-mgr-team-q":     { zh: "我团队本月花了多少？",   en: "How much did my team spend this month?" },
     "detail.note":      { zh: "备注",           en: "Note"               },
     "detail.view-full": { zh: "查看完整详情 →", en: "View Full Details →" },
 
