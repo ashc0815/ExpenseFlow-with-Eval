@@ -158,14 +158,15 @@ Plus a **customer segmentation** doc that picks which segment to target first (5
 
 **Reading order for portfolio reviewers:**
 
-1. This README's [Design Decisions](#design-decisions) section — taxonomy and principles
-2. [`docs/hybrid-fraud-architecture.md`](docs/hybrid-fraud-architecture.md) — the Layer 1 + Layer 2 design story (10-min read)
-3. [`docs/evals-reference.md`](docs/evals-reference.md) — eval discipline (Hamel framework adaptation)
-4. [`docs/multi-entity-design.md`](docs/multi-entity-design.md) — what's deliberately deferred and why
-5. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — what production-grade requires (8 gaps)
-6. [`docs/customer-segmentation.md`](docs/customer-segmentation.md) — which segment to target first
-7. [`docs/integration-design.md`](docs/integration-design.md) — concrete NetSuite + Stripe + Excel-bridge designs
-8. [`docs/fapiaoforce-prd.md`](docs/fapiaoforce-prd.md) — Concur-style multi-group product spec for the China-enterprise vertical (the productization of Segment B)
+1. **[`docs/case-study-hybrid-fraud.md`](docs/case-study-hybrid-fraud.md) — if you read one thing, read this (2-min, 1-page)**
+2. This README's [Design Decisions](#design-decisions) section — taxonomy and principles
+3. [`docs/hybrid-fraud-architecture.md`](docs/hybrid-fraud-architecture.md) — the Layer 1 + Layer 2 design story (10-min read)
+4. [`docs/evals-reference.md`](docs/evals-reference.md) — eval discipline (Hamel framework adaptation)
+5. [`docs/multi-entity-design.md`](docs/multi-entity-design.md) — what's deliberately deferred and why
+6. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — what production-grade requires (8 gaps)
+7. [`docs/customer-segmentation.md`](docs/customer-segmentation.md) — which segment to target first
+8. [`docs/integration-design.md`](docs/integration-design.md) — concrete NetSuite + Stripe + Excel-bridge designs
+9. [`docs/fapiaoforce-prd.md`](docs/fapiaoforce-prd.md) — Concur-style multi-group product spec for the China-enterprise vertical (the productization of Segment B)
 
 ---
 
