@@ -84,8 +84,34 @@
 
   // ── Inject HTML ──
   const _t = window.t || (k => k);
+
+  // Role-aware welcome / placeholder / suggestion buttons. Mirrors the
+  // backend's agent_role routing: ctx.role manager|finance_admin → manager
+  // copilot tools (audit drill-down, queue, team spend); else → employee.
+  // This is purely cosmetic — backend re-determines role server-side.
+  function _isApprover() {
+    try {
+      const u = window.auth && window.auth.getUser && window.auth.getUser();
+      const roles = (u && u.roles) || [];
+      return roles.includes("manager") || roles.includes("finance_admin");
+    } catch (_) { return false; }
+  }
+  const _approver = _isApprover();
+  const welcomeText = _t(_approver ? "ai.welcome-manager" : "ai.welcome-qa").replace(/\n/g, "<br>");
+  const placeholderText = _t(_approver ? "ai.placeholder-manager" : "ai.placeholder-qa");
+  const suggestionsHtml = _approver
+    ? `
+        <button data-q="${_t("ai.sug-mgr-why-q")}">${_t("ai.sug-mgr-why")}</button>
+        <button data-q="${_t("ai.sug-mgr-queue-q")}">${_t("ai.sug-mgr-queue")}</button>
+        <button data-q="${_t("ai.sug-mgr-team-q")}">${_t("ai.sug-mgr-team")}</button>
+        <button data-q="${_t("ai.sug-policy-q")}">${_t("ai.sug-policy")}</button>`
+    : `
+        <button data-q="${_t("ai.sug-monthly-q")}">${_t("ai.sug-monthly")}</button>
+        <button data-q="${_t("ai.sug-budget-q")}">${_t("ai.sug-budget")}</button>
+        <button data-q="${_t("ai.sug-dup-q")}">${_t("ai.sug-dup")}</button>
+        <button data-q="${_t("ai.sug-policy-q")}">${_t("ai.sug-policy")}</button>`;
+
   const wrapper = document.createElement("div");
-  const welcomeText = _t("ai.welcome-qa").replace(/\n/g, "<br>");
   wrapper.innerHTML = `
     <div class="ai-overlay" id="ai-overlay"></div>
     <button class="ai-fab" id="ai-fab" title="${_t("ai.title")}">💡</button>
@@ -97,14 +123,10 @@
       <div class="ai-messages" id="ai-messages">
         <div class="ai-msg assistant">${welcomeText}</div>
       </div>
-      <div class="ai-suggestions" id="ai-suggestions">
-        <button data-q="${_t("ai.sug-monthly-q")}">${_t("ai.sug-monthly")}</button>
-        <button data-q="${_t("ai.sug-budget-q")}">${_t("ai.sug-budget")}</button>
-        <button data-q="${_t("ai.sug-dup-q")}">${_t("ai.sug-dup")}</button>
-        <button data-q="${_t("ai.sug-policy-q")}">${_t("ai.sug-policy")}</button>
+      <div class="ai-suggestions" id="ai-suggestions">${suggestionsHtml}
       </div>
       <div class="ai-input-bar">
-        <input id="ai-input" placeholder="${_t("ai.placeholder-qa")}">
+        <input id="ai-input" placeholder="${placeholderText}">
         <button id="ai-send-btn">${_t("ai.send")}</button>
       </div>
     </div>`;
