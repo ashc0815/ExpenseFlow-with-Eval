@@ -1,13 +1,13 @@
 # Industrial-Readiness Roadmap — From Portfolio Demo to Production-Grade SaaS
 
-> **Status:** Forward-compat contract. All 8 gaps documented; **none implemented in current code**.
+> **Status:** Forward-compat contract. All 9 gaps documented; **none implemented in current code**.
 > **Companion to:** [`hybrid-fraud-architecture.md`](hybrid-fraud-architecture.md), [`evals-reference.md`](evals-reference.md), [`multi-entity-design.md`](multi-entity-design.md), [`customer-segmentation.md`](customer-segmentation.md), [`integration-design.md`](integration-design.md).
 
 ---
 
 ## TL;DR
 
-ExpenseFlow is currently a **single-tenant, single-entity, single-jurisdiction demo** with a strong AI/eval core. To sell it to a real customer, eight gaps need to close — three the team has been thinking about, five less obvious but more decisive:
+ExpenseFlow is currently a **single-tenant, single-entity, single-jurisdiction demo** with a strong AI/eval core. To sell it to a real customer, nine gaps need to close — three the team has been thinking about, six less obvious but more decisive:
 
 | # | Gap | Severity | Effort | Why it's the wall |
 |---|---|---|---|---|
@@ -19,6 +19,7 @@ ExpenseFlow is currently a **single-tenant, single-entity, single-jurisdiction d
 | 6 | **Multi-tenancy + data isolation** | **CRITICAL** | 4-6 weeks | Without it, can't sell SaaS at all |
 | 7 | **Audit + compliance certifications** (SOX, SOC 2) | **CRITICAL** | 6-9 months + ~$50K USD | Enterprise procurement gate |
 | 8 | **Operational maturity** (SLA, on-call, observability) | **HIGH** | Continuous | Day-2 problems start here |
+| 9 | **Internal code health** (duplication + state machine) | Medium | 1.5-2 weeks (triggered) | 14% duplication compounds; state machine prevents SOC 2 findings |
 
 Total to "credibly sellable to a 100-person company": **6-12 months / 5-7 person team**.
 
@@ -515,6 +516,72 @@ Then ongoing: every incident → improve a runbook; every quarter → review SLO
 
 ---
 
+## Gap 9 · Internal code health (duplication + coupling)
+
+### What it is
+
+Production-grade code is read more than it's written. Industrial customers don't see code, but their consequences do — a 9-place copy-paste means adding a new approval status takes a week and ships a bug; a missing state machine means audit-log inconsistency becomes a SOC 2 finding.
+
+### Current state
+
+ExpenseFlow has **~14% duplication** in application code (≈500 of 3,500 lines), concentrated in 5 hotspots:
+
+1. **9 status-change endpoints** repeating the same load → check → mutate → audit → notify pattern (35-40% repeated logic)
+2. **3 frontend list+detail pages** (`my-reports.html` / `queue.html` / `review.html`) with 70-85% function similarity, no shared module
+3. **2 chat tool pairs** (`get_report_detail` vs `get_submission_for_review`) with ~60% serialization overlap
+4. **54 hardcoded status strings** across 5 files, no enum
+5. **15+ ad-hoc audit timeline writes** with ~45% boilerplate, no event helper
+
+Detailed evidence + refactor paths live in [`code-health-audit.md`](code-health-audit.md).
+
+### Root causes (from the audit)
+
+1. **Role modeled as layout boundary, not policy boundary** — separate `frontend/{employee,manager,finance}/` folders physically duplicate the same domain object's renderer with different action buttons. Concur/Airwallex/Ramp use one list view + role-conditional buttons.
+2. **Status machine doesn't exist** — 9 endpoints reimplement the same 5-step transition pattern. SAP rewrote Concur's approval engine for the same reason after acquisition.
+3. **No "duplication budget" mechanism** — Rule of Three (refactor at the 3rd instance) wasn't enforced; multiple hotspots have 3-9 instances without the trigger ever firing.
+
+### What's needed
+
+In refactor-payback order (do early ones first; later ones depend on them):
+
+1. **Status enum + state machine** — single `StrEnum` for all 11 status values + `transition(resource, from, to, actor, audit_message)` helper. Subsumes Hotspots 1 and 4. **0.5-1 day**, single PR.
+2. **Audit event helper** — `audit_event(actor, action, resource, *, detail, phase)` replacing 15+ hand-built `f-string + dict` blocks. Falls out almost free once #1 lands. **1 hour**.
+3. **Submission serializer** — `serialize_submission(sub, *, scope: "self" | "approver")` replacing the two divergent chat tools. **2 hours**.
+4. **Frontend list module** — `frontend/shared/reports-table.js` (or a `<reports-table>` Web Component) used by all three role pages. Highest visible payoff, biggest effort. **1 day**.
+5. **Domain status module** — `backend/domain/status.py` central + a transition graph declaring legal moves. Done concurrently with #1. **0.5 day**.
+
+Total budget: **1.5-2 weeks of one engineer's time** for all 5 hotspots.
+
+### Effort
+
+**Triggered, not scheduled.** Each hotspot has a specific payback trigger — see [`code-health-audit.md`](code-health-audit.md) "Refactor budget" section. Examples:
+
+- Hotspot 1: trigger is the **10th approval endpoint** OR the next added status
+- Hotspot 2: trigger is the **4th list view** (auditor read-only, rejected archive, etc.)
+- Hotspot 3: trigger is the **3rd serialization context** (admin export / partner API)
+
+**Don't refactor for aesthetics.** Refactor when the duplication starts costing real time on real PRs.
+
+### Decision points
+
+- **Refactor in-place vs greenfield rewrite?** In-place. The duplication is local, not architectural. Greenfield burns 6 weeks for a 2-week problem.
+- **Stop adding features until the audit is paid back?** No. The 14% waste is tolerable through Phase 1 (first paying customer). It becomes unacceptable in Phase 2 (multi-customer onboarding).
+- **Block PRs that add to a hotspot?** Yes, after Phase 1. PR template grows a "did you add to a known hotspot?" checkbox; if yes, refactor must be in the same PR.
+
+### Who to talk to
+
+- Anyone who's done a B2B SaaS state-machine refactor (SAP / Concur / Workday alums — they've all done this exact migration)
+- A senior frontend engineer for Hotspot 2 (Web Components vs ES module trade-off is real)
+- An SRE / DevOps engineer for #5 (audit event format must survive SOC 2 evidence collection — see Gap 7)
+
+### Dependencies
+
+- **Gap 7 (SOC 2)** — audit log inconsistency from Hotspot 5 becomes a finding. Pay this back before SOC 2 audit window opens.
+- **Gap 8 (Operational maturity)** — structured logging is harder when status strings are scattered. Hotspot 4 makes log analysis painful.
+- **Gap 1 (Org tree)** — adding "manager-of-manager" approvals adds endpoints. Don't add the 10th endpoint without first paying back Hotspot 1.
+
+---
+
 ## Sequencing — if you actually do all this, in what order?
 
 ```
@@ -532,11 +599,12 @@ Phase 1 — first paying customer (3 months)
   → Org tree v1 minimum (Gap 1)        [1 week — flat, no matrix]
 
 Phase 2 — first 5 paying customers (6 months)
-  → SOC 2 Type II prep + audit (Gap 7)  [6-9 months overlapping]
-  → N-level approval chains (Gap 2)     [3 weeks]
-  → Multi-jurisdiction policy (Gap 3)   [3 weeks per region]
-  → Real payment via Stripe (Gap 5)     [3 months]
-  → Operational maturity full (Gap 8)   [continuous]
+  → SOC 2 Type II prep + audit (Gap 7)   [6-9 months overlapping]
+  → N-level approval chains (Gap 2)      [3 weeks]
+  → Multi-jurisdiction policy (Gap 3)    [3 weeks per region]
+  → Real payment via Stripe (Gap 5)      [3 months]
+  → Operational maturity full (Gap 8)    [continuous]
+  → Pay back code-health hotspots (Gap 9) [1.5-2 weeks, triggered by 10th endpoint or 4th list view]
 
 Phase 3 — enterprise tier (12+ months)
   → Direct ERP API integration (Gap 4 Path B)  [3+ months per ERP]
@@ -566,6 +634,7 @@ Phase 3 — enterprise tier (12+ months)
 - [`multi-entity-design.md`](multi-entity-design.md) — Gap 3-adjacent (per-entity policy overrides)
 - [`customer-segmentation.md`](customer-segmentation.md) — which segment to target first
 - [`integration-design.md`](integration-design.md) — concrete NetSuite + Stripe Issuing API designs
+- [`code-health-audit.md`](code-health-audit.md) — Gap 9 evidence: 5 duplication hotspots with refactor paths and payback triggers
 
 ---
 
