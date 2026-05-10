@@ -1,0 +1,26 @@
+# Fraud Investigator — CAPABILITY suite (empty stub)
+#
+# TIER: capability — hard cases that expose weaknesses in the OODA fraud
+# investigator. Target κ in 0.5-0.7 range. **Not** an "all-must-pass" gate.
+# COMPANION: eval_regression_fraud_investigator.yaml
+#
+# Why empty: Phase 1 of docs/eval-harness-plan.md just deleted 15
+# placeholder cases that existed here pretending to test capability.
+# Phase 2 of the plan re-populates this file via the bug-hunt loop:
+#
+#   1. Run fraud_investigator (mock + real-LLM paths) on production-like
+#      submissions
+#   2. Find cases where the verdict diverges between paths, or where the
+#      verdict feels wrong by domain-expert intuition
+#   3. For each such "seed" case, generate ~10-20 variants (different
+#      amounts, merchants, employee patterns, tool-call paths)
+#   4. Curate the 20-30 most discriminative variants → add here
+#   5. Push the rest to the few-shot example bank in the agent prompt
+#   6. Re-run; expect κ to drop into the 0.5-0.7 range — that's the goal,
+#      not a 0.9+ "all green" signal
+#
+# A case here uses the same schema as the regression file. The difference
+# is intent: this file is supposed to be HARD. If κ on this suite climbs
+# above 0.7, the cases are too easy — refresh them.
+
+[]

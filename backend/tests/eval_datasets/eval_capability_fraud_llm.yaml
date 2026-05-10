@@ -1,0 +1,35 @@
+# Fraud LLM Analyzer — CAPABILITY suite (empty stub)
+#
+# TIER: capability — hard cases for the LLM-driven fraud analyzer's 6
+# subfield outputs (template_score / contradiction / extracted_person_count
+# / person_amount_reasonable / vagueness / overall_risk). Target κ ≈ 0.5-0.7
+# on the overall_risk dimension.
+#
+# Why empty: Phase 1 of docs/eval-harness-plan.md deleted the 3
+# placeholder cases that lived in `fraud_human_labeled.yaml`.
+# Phase 2 populates via the bug-hunt loop.
+#
+# Subfield-specific seed candidates worth chasing first:
+#   - template_score: descriptions that LOOK templated but are actually
+#     legitimate recurring expenses (e.g. monthly office supply)
+#   - contradiction_found: receipt city in HK but description mentions
+#     Shanghai meeting — true contradiction; vs same case with
+#     "Shanghai team flew to HK for dinner" which is consistent
+#   - person_amount_reasonable: high amount + 1 person = unreasonable;
+#     same amount + 8-person team meal = reasonable
+#   - vagueness: "杂费" (vague) vs "餐费 with 客户A" (specific)
+#
+# Schema reminder (each case):
+#   id            — `fh_NNN_short_hint`
+#   description   — what this case probes
+#   input         — submission fields the LLM analyzer sees
+#   human_label
+#     template_score_bucket:    low | medium | high
+#     contradiction_found:      true | false
+#     extracted_person_count:   integer | null
+#     person_amount_reasonable: true | false
+#     vagueness_bucket:         low | medium | high
+#     overall_risk:             clean | suspicious | fraud
+#   labeler_note  — WHY
+
+[]

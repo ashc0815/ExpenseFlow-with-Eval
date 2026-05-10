@@ -1,9 +1,22 @@
-# Agent Compliance Reasoner — human-labeled evaluation dataset
+# Agent Compliance Reasoner — REGRESSION suite (was: agent_compliance_human_labeled.yaml)
+#
+# TIER: regression — must-pass cases for every release. Target κ ≥ 0.85.
+# COMPANION: eval_capability_agent_compliance.yaml (hard cases that
+# expose weaknesses; target κ in 0.5-0.7 range, not 0.9+).
+#
+# Why this split: per docs/eval-harness-plan.md (and the principle
+# "evaluation set should LEAD the training set in difficulty"), regression
+# is for "we cannot ship if these break" — easy + representative. Hard
+# cases that drive iteration go to the capability suite.
+#
+# Phase 1 cleanup (2026-05): the 18 PLACEHOLDER entries that previously
+# lived here have been DELETED, not migrated. They were a project-wide
+# anti-pattern: pretending to test capability without actually testing.
+#
+# ─────────────────────────────────────────────────────────────────────
 #
 # Purpose: Ground truth for the cross-record compliance reasoner shipped in
-# agent/compliance_reasoner.py. Without these labels, dashboard metrics for
-# the reasoner are uncalibrated noise (Hamel: "every accuracy number reported
-# without measuring agreement against humans is uncalibrated noise").
+# agent/compliance_reasoner.py.
 #
 # Three finding kinds the reasoner emits:
 #   agent.travel_during_leave           — transport/accommodation on leave day
@@ -24,10 +37,6 @@
 #                   Order doesn't matter; the test sorts by kind before
 #                   comparing.
 #   labeler_note  — WHY this label. Future-you will thank you.
-#
-# Status: 12 fully-labeled cases + 18 PLACEHOLDERs. Replace placeholders
-# with real cases before treating the κ snapshot as meaningful. Until then,
-# the test SKIPs (matches the Stage-1 placeholder convention).
 
 # ─────────────────────────────────────────────────────────────────────
 # Section 1: agent.travel_during_leave
@@ -298,166 +307,3 @@
     The cross-person meal rule is meal/entertainment-scoped. A
     transport expense on the same date as an attendee appearance
     is normal (attended a dinner, took a taxi home). MUST NOT fire.
-
-# ─────────────────────────────────────────────────────────────────────
-# PLACEHOLDERS — replace with real cases before this dataset is meaningful
-# ─────────────────────────────────────────────────────────────────────
-# Pattern hints for the next 18 cases (target ≥30 total per Hamel saturation):
-#   - 2 more travel_during_leave: sick leave (also approved); leave on
-#     boundary day (claim on start_date itself, claim on end_date itself)
-#   - 2 more claim_vs_allowance: phone_allowance + telecom; allowance starting
-#     mid-month (effective_from = mid-month)
-#   - 2 more cross_person_meal: case where BOTH parties expensed the same
-#     dinner; case where attendee role is "client" (not employee — should
-#     NOT fire because client attendance doesn't double-bill)
-#   - 4 multi-finding cases: travel during leave AND on car_allowance;
-#     meal collision AND meal_per_diem; etc.
-#   - 4 boundary cases: leave +/- 1 day; allowance effective_from = exact
-#     submission date; submission_attendee with NULL employee_id (external
-#     guest)
-#   - 4 non-trigger cases: irrelevant components, irrelevant categories,
-#     missing data, employee with no leave/allowance/attendee records
-
-- id: agc_013_placeholder_sick_leave
-  description: "PLACEHOLDER — sick leave instead of vacation"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_014_placeholder_leave_boundary_start_day
-  description: "PLACEHOLDER — claim on the very first day of leave"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_015_placeholder_phone_allowance
-  description: "PLACEHOLDER — phone_allowance + telecom claim"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_016_placeholder_allowance_mid_month_start
-  description: "PLACEHOLDER — allowance effective_from is in the middle of the month"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_017_placeholder_external_attendee_no_fire
-  description: "PLACEHOLDER — attendee role=client should NOT fire"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_018_placeholder_both_parties_expensed_same_dinner
-  description: "PLACEHOLDER — A and B both submit a meal AND attended each other's"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_019_placeholder_multi_finding_travel_and_allowance
-  description: "PLACEHOLDER — transport during leave AND car_allowance active"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_020_placeholder_multi_finding_meal_collision_and_per_diem
-  description: "PLACEHOLDER — meal collision AND meal_per_diem active"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_021_placeholder_multi_finding_three_at_once
-  description: "PLACEHOLDER — all 3 rules fire on a single submission"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_022_placeholder_leave_just_before_claim
-  description: "PLACEHOLDER — claim 1 day after leave ended (boundary)"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_023_placeholder_allowance_starts_exact_submission_date
-  description: "PLACEHOLDER — effective_from == submission date"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_024_placeholder_external_attendee_null_employee_id
-  description: "PLACEHOLDER — attendee with employee_id=NULL (external guest)"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_025_placeholder_office_supplies_no_fire
-  description: "PLACEHOLDER — office supplies during leave + car_allowance, no fire expected"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_026_placeholder_no_records_at_all
-  description: "PLACEHOLDER — employee has zero leave/allowance/attendee data"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_027_placeholder_cancelled_leave
-  description: "PLACEHOLDER — leave with status='cancelled'"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_028_placeholder_parental_leave_long_window
-  description: "PLACEHOLDER — 12-week parental leave + travel claim mid-window"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_029_placeholder_meal_collision_different_employees
-  description: "PLACEHOLDER — appears on attendee list of employee in different cost center"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"
-
-- id: agc_030_placeholder_taxi_on_business_travel_during_leave
-  description: "PLACEHOLDER — work-trip cancelled vacation, but taxi to airport on day 1"
-  context: {}
-  submission: {}
-  human_label:
-    expected_findings: []
-  labeler_note: "PLACEHOLDER"

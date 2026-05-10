@@ -55,7 +55,7 @@ from backend.tests.test_judge_agreement import (
 _DATASET_PATH = (
     Path(__file__).resolve().parent
     / "eval_datasets"
-    / "fraud_investigation_human_labeled.yaml"
+    / "eval_regression_fraud_investigator.yaml"
 )
 _SNAPSHOT_PATH = (
     Path(__file__).resolve().parent / "eval_judge_fraud_investigator_latest.json"
@@ -193,11 +193,11 @@ async def test_fraud_investigator_verdict_kappa():
             "placeholder_count": n_placeholder,
             "message": (
                 f"{n_placeholder} placeholder(s); replace with real "
-                "labels in fraud_investigation_human_labeled.yaml"
+                "labels in eval_regression_fraud_investigator.yaml"
             ),
         })
         pytest.skip(
-            f"fraud_investigation_human_labeled.yaml has only "
+            f"eval_regression_fraud_investigator.yaml has only "
             f"{n_placeholder} placeholder(s). Add real cases first."
         )
 
