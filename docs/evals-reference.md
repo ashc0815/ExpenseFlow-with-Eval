@@ -61,6 +61,33 @@ The flywheel:
 
 ---
 
+## 1.5. Anthropic vocabulary mapping
+
+The Hamel framework gives the **what** (3 levels of evaluators). Anthropic's Eval Harness vocabulary gives the **how** — the runtime infrastructure that takes a dataset and produces scored results. Both apply to ExpenseFlow.
+
+| Anthropic term | Definition | ExpenseFlow concrete artifact |
+|---|---|---|
+| **Task / Case / Query** | One independent test input | A single YAML entry in `eval_*.yaml` |
+| **Trial** | One run of one task | One `pytest` invocation against one case (mock + real-LLM are separate trials) |
+| **Trajectory / Trace** | The full record of a trial | `LLMTrace` table row + `audit_report.investigation.evidence_chain` |
+| **Grader** | The scorer that turns a trial into a number | `cohens_kappa()` + `must_call_tools` checker in `test_judge_agreement.py` |
+| **Eval Suite** | A coherent collection of related tasks | A YAML file (e.g. `eval_regression_fraud_investigator.yaml`) |
+| **Eval Harness** | The whole running infrastructure | `backend/tests/test_*_eval.py` + `/eval` dashboard + JSON snapshots |
+
+The 5 elements every Eval Harness needs (per Anthropic), and where they live in ExpenseFlow:
+
+| Harness element | ExpenseFlow location |
+|---|---|
+| Data Loader (read cases) | YAML loader at the top of each `test_*_eval.py` |
+| Runner (execute each case) | pytest with parametrize; orchestrates seed → call → collect |
+| Environment isolation (clean state per run) | Fresh tmp SQLite (`_TMP_DB`) per pytest module |
+| Logging / Trace | `LLMTrace` table (model + prompt + response + latency + git commit) |
+| Result aggregator | JSON snapshot files (`eval_judge_*_latest.json`) → dashboard |
+
+**Why both vocabularies matter.** Hamel tells you what kind of eval to write; Anthropic tells you how to run it reproducibly at scale. ExpenseFlow uses both — see [`eval-harness-plan.md`](eval-harness-plan.md) for the full architecture and the regression-vs-capability split that operationalises the Anthropic infra against the Hamel principles.
+
+---
+
 ## 2. The Three Levels — and where ExpenseFlow stands
 
 Hamel groups evals by what they can verify:

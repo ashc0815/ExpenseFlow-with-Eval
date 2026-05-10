@@ -160,12 +160,13 @@ Prompt injection 能让 LLM 输出任何字符串。但**没有任何字符串**
 1. **[`docs/case-study-hybrid-fraud.md`](docs/case-study-hybrid-fraud.md) — 只读一篇就读这个（2 分钟，1 页）**
 2. 本 README [Design Decisions](#核心设计决策) 部分 — 分类法和原则
 3. [`docs/hybrid-fraud-architecture.md`](docs/hybrid-fraud-architecture.md) — Layer 1 + Layer 2 设计故事（10 分钟）
-4. [`docs/evals-reference.md`](docs/evals-reference.md) — Eval 方法论（Hamel 框架适配）
-5. [`docs/multi-entity-design.md`](docs/multi-entity-design.md) — 故意延后了什么、为什么
-6. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — 工业级要求（8 个 gap）
-7. [`docs/customer-segmentation.md`](docs/customer-segmentation.md) — 应该先卖给谁
-8. [`docs/integration-design.md`](docs/integration-design.md) — NetSuite + Stripe + Excel-bridge 真 API 设计
-9. [`docs/fapiaoforce-prd.md`](docs/fapiaoforce-prd.md) — Concur-style 多集团产品 PRD（中国企业市场 Segment B 的产品化）
+4. [`docs/evals-reference.md`](docs/evals-reference.md) — Eval 方法论（Hamel 框架适配 + Anthropic Eval Harness 术语）
+5. [`docs/eval-harness-plan.md`](docs/eval-harness-plan.md) — 能力 vs 回归集 + bug-hunt 循环 + 60 分目标
+6. [`docs/multi-entity-design.md`](docs/multi-entity-design.md) — 故意延后了什么、为什么
+7. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — 工业级要求（9 个 gap）
+8. [`docs/customer-segmentation.md`](docs/customer-segmentation.md) — 应该先卖给谁
+9. [`docs/integration-design.md`](docs/integration-design.md) — NetSuite + Stripe + Excel-bridge 真 API 设计
+10. [`docs/fapiaoforce-prd.md`](docs/fapiaoforce-prd.md) — Concur-style 多集团产品 PRD（中国企业市场 Segment B 的产品化）
 
 ---
 

@@ -1,6 +1,6 @@
 """Agent compliance reasoner — eval against the human-labeled dataset.
 
-Loads `eval_datasets/agent_compliance_human_labeled.yaml`, seeds each
+Loads `eval_datasets/eval_regression_agent_compliance.yaml`, seeds each
 case's `context` (leaves / allowances / cross-person attendee records)
 into a fresh DB, runs `reason_about_submission()` on the case's
 submission, and compares findings to `human_label.expected_findings`.
@@ -52,7 +52,7 @@ from backend.db.store import (
 _DATASET_PATH = (
     Path(__file__).resolve().parent
     / "eval_datasets"
-    / "agent_compliance_human_labeled.yaml"
+    / "eval_regression_agent_compliance.yaml"
 )
 
 _engine = create_async_engine(_DB_URL)
@@ -206,7 +206,7 @@ async def test_agent_compliance_against_human_labels():
     cases, n_placeholder = _strip_placeholders(raw)
     if not cases:
         pytest.skip(
-            f"agent_compliance_human_labeled.yaml has only {n_placeholder} "
+            f"eval_regression_agent_compliance.yaml has only {n_placeholder} "
             "placeholder(s) and no real cases yet. Replace with real labels."
         )
 

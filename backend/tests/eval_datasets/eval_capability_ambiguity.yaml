@@ -1,0 +1,27 @@
+# Ambiguity Detector — CAPABILITY suite (empty stub)
+#
+# TIER: capability — hard cases for the ambiguity detector's 3-class
+# recommendation (auto_pass / human_review / suggest_reject). Target
+# κ in 0.5-0.7 range.
+#
+# Why empty: Phase 1 of docs/eval-harness-plan.md deleted the 3
+# placeholder cases that lived in `ambiguity_human_labeled.yaml`.
+# Phase 2 populates via the bug-hunt loop.
+#
+# Critical confusion-matrix cells to chase first (highest-cost mistakes):
+#   - gold=suggest_reject & ai=auto_pass → false negative (risk slips
+#     through). Look for: clear policy violations the detector misses
+#     because no single factor crosses threshold.
+#   - gold=auto_pass & ai=suggest_reject → false positive (legit user
+#     blocked). Look for: senior-level expense at high but-allowed amount,
+#     unusual but explainable merchant, etc.
+#
+# Schema reminder (each case):
+#   id            — `ah_NNN_short_hint`
+#   description   — what this case probes
+#   input         — synthesized submission (expense_type, amount, city,
+#                   date, description, attendees, employee_level, history)
+#   human_gold    — auto_pass | human_review | suggest_reject
+#   labeler_note  — WHY this gold label
+
+[]

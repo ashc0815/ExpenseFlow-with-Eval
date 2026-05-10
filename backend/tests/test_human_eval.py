@@ -30,8 +30,8 @@ import yaml
 
 
 _TEST_DIR = Path(__file__).resolve().parent
-_FRAUD_YAML = _TEST_DIR / "eval_datasets" / "fraud_human_labeled.yaml"
-_AMBIG_YAML = _TEST_DIR / "eval_datasets" / "ambiguity_human_labeled.yaml"
+_FRAUD_YAML = _TEST_DIR / "eval_datasets" / "eval_capability_fraud_llm.yaml"
+_AMBIG_YAML = _TEST_DIR / "eval_datasets" / "eval_capability_ambiguity.yaml"
 _FRAUD_OUT = _TEST_DIR / "eval_human_fraud_latest.json"
 _AMBIG_OUT = _TEST_DIR / "eval_human_ambiguity_latest.json"
 
@@ -222,7 +222,7 @@ def test_fraud_human_eval() -> None:
             f"no real cases yet ({placeholder_count} placeholder(s); replace with real labels)"
         )
         pytest.skip(
-            f"fraud_human_labeled.yaml has {placeholder_count} placeholder(s) "
+            f"eval_capability_fraud_llm.yaml has {placeholder_count} placeholder(s) "
             "and no real cases — replace placeholders with real human-labeled "
             "examples before this eval is meaningful."
         )
@@ -323,7 +323,7 @@ def test_ambiguity_human_eval() -> None:
             f"no real cases yet ({placeholder_count} placeholder(s); replace with real labels)"
         )
         pytest.skip(
-            f"ambiguity_human_labeled.yaml has {placeholder_count} placeholder(s) "
+            f"eval_capability_ambiguity.yaml has {placeholder_count} placeholder(s) "
             "and no real cases — replace placeholders with real human-labeled "
             "examples before this eval is meaningful."
         )

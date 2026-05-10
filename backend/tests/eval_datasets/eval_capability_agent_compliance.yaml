@@ -1,0 +1,26 @@
+# Agent Compliance Reasoner — CAPABILITY suite (empty stub)
+#
+# TIER: capability — hard cases that expose weaknesses in the cross-record
+# compliance reasoner. Target κ in 0.5-0.7 range. **Not** an "all-must-pass"
+# gate.
+# COMPANION: eval_regression_agent_compliance.yaml
+#
+# Why empty: Phase 1 of docs/eval-harness-plan.md just deleted 18
+# placeholder cases that existed here pretending to test capability.
+# Phase 2 of the plan re-populates via the bug-hunt loop (see the
+# fraud_investigator capability file for the procedure).
+#
+# Seed candidates worth chasing first (per the deleted placeholder hints):
+#   - Sick leave instead of vacation (boundary: leave kind matters?)
+#   - Allowance starting mid-month (boundary: effective_from != month-start)
+#   - Same dinner expensed by both attendees (cross_person_meal collision
+#     where each side has the OTHER on the attendee list)
+#   - External attendee with NULL employee_id (don't fire — they're not
+#     a colleague, no double-billing)
+#   - Compound: travel_during_leave + claim_vs_allowance fire on same case
+#   - Submission attendees but no leave/allowance records anywhere
+#
+# A case uses the same schema as the regression file. Difference is intent:
+# this file is HARD. If κ here climbs above 0.7, refresh.
+
+[]

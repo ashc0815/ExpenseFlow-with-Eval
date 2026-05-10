@@ -57,8 +57,8 @@ import yaml
 
 
 _TEST_DIR = Path(__file__).resolve().parent
-_FRAUD_YAML = _TEST_DIR / "eval_datasets" / "fraud_human_labeled.yaml"
-_AMBIG_YAML = _TEST_DIR / "eval_datasets" / "ambiguity_human_labeled.yaml"
+_FRAUD_YAML = _TEST_DIR / "eval_datasets" / "eval_capability_fraud_llm.yaml"
+_AMBIG_YAML = _TEST_DIR / "eval_datasets" / "eval_capability_ambiguity.yaml"
 _AMBIG_OUT = _TEST_DIR / "eval_judge_ambiguity_latest.json"
 _FRAUD_OUT = _TEST_DIR / "eval_judge_fraud_overall_risk_latest.json"
 
@@ -222,11 +222,11 @@ def test_ambiguity_recommendation_kappa() -> None:
             "placeholder_count": n_placeholder,
             "message": (
                 f"{n_placeholder} placeholder(s); replace with real labels "
-                "in eval_datasets/ambiguity_human_labeled.yaml"
+                "in eval_datasets/eval_capability_ambiguity.yaml"
             ),
         })
         pytest.skip(
-            f"ambiguity_human_labeled.yaml has only {n_placeholder} "
+            f"eval_capability_ambiguity.yaml has only {n_placeholder} "
             "placeholder(s). Add real human-labeled cases to compute κ."
         )
 
@@ -365,11 +365,11 @@ def test_fraud_overall_risk_kappa() -> None:
             "placeholder_count": n_placeholder,
             "message": (
                 f"{n_placeholder} placeholder(s); replace with real labels "
-                "in eval_datasets/fraud_human_labeled.yaml"
+                "in eval_datasets/eval_capability_fraud_llm.yaml"
             ),
         })
         pytest.skip(
-            f"fraud_human_labeled.yaml has only {n_placeholder} "
+            f"eval_capability_fraud_llm.yaml has only {n_placeholder} "
             "placeholder(s). Add real human-labeled cases to compute κ."
         )
 

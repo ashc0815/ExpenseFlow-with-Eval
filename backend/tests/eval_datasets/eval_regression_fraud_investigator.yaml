@@ -1,10 +1,25 @@
-# Fraud Investigator Agent — human-labeled evaluation dataset
+# Fraud Investigator — REGRESSION suite (was: fraud_investigation_human_labeled.yaml)
+#
+# TIER: regression — must-pass cases for every release. Target κ ≥ 0.85.
+# COMPANION: eval_capability_fraud_investigator.yaml (hard cases that
+# expose weaknesses; target κ in 0.5-0.7 range, not 0.9+).
+#
+# Why this split: per docs/eval-harness-plan.md (and the principle
+# "evaluation set should LEAD the training set in difficulty"), regression
+# is for "we cannot ship if these break" — easy + representative. Hard
+# cases that drive iteration go to the capability suite.
+#
+# Phase 1 cleanup (2026-05): the 15 PLACEHOLDER entries that previously
+# lived here have been DELETED, not migrated. They were a project-wide
+# anti-pattern: pretending to test capability without actually testing.
+# Phase 2 of the eval-harness plan re-populates the capability suite
+# with cases the system is expected to FAIL on.
+#
+# ─────────────────────────────────────────────────────────────────────
 #
 # Purpose: Ground truth for the OODA fraud investigator (PR-B). The
 # investigator emits {verdict, confidence, evidence_chain, summary} on
-# high-risk submissions. Without labeled cases we have no way to ask
-# "did the agent's verdict agree with a human?" — and dashboard pass
-# rates would be uncalibrated noise (Hamel: same anti-pattern as B1).
+# high-risk submissions.
 #
 # Three verdict classes:
 #   clean       — false positive in Layer 1; agent should clear
@@ -33,11 +48,6 @@
 #     must_call_tools:   [tool_names...] — tools the agent MUST have
 #                        called (subset; agent may call more)
 #   labeler_note  WHY this label
-#
-# Status: 5 fully-labeled cases + 15 PLACEHOLDERs. Replace placeholders
-# with real cases before treating κ on this dataset as a binding
-# accuracy number. Until then, the eval test SKIPs (matches the
-# project-wide placeholder convention from C1 / B1).
 
 # ─────────────────────────────────────────────────────────────────────
 # Section 1: SUSPICIOUS — single mid-score signal, normal pattern
@@ -251,158 +261,3 @@
     have a submission go through. The agent should call
     get_employee_profile first; the "found: false" response confirms
     the rule. Even mock heuristic agrees (max_score 90 >= 85 → fraud).
-
-# ─────────────────────────────────────────────────────────────────────
-# PLACEHOLDERS — replace with real cases before this dataset is meaningful
-# ─────────────────────────────────────────────────────────────────────
-# Pattern hints for the next 15 cases (target ≥30 total per Hamel saturation):
-#
-#   2 more clean (Layer-1 false positives):
-#     - threshold_proximity but recurring legitimate client dinner pattern
-#     - weekend_frequency but employee in retail/sales (weekends normal)
-#   3 more suspicious (mid-confidence):
-#     - geo_conflict — city tag disputed but no flight record either way
-#     - vendor_frequency — 7th visit to same merchant, unusual but not damning
-#     - description_template — generic words but legit small purchases
-#   3 more fraud (high-confidence):
-#     - duplicate_attendee — same dinner expensed by two employees
-#     - merchant_category_mismatch — "office supplies" at a hotel bar
-#     - approver_collusion — same approver always greenlighting suspect cases
-#   3 multi-finding (≥4 signals fire at once)
-#   2 boundary (just below threshold; just above)
-#   2 unusual (e.g. high-level executive — different baseline expectations)
-
-- id: fri_006_placeholder_clean_legitimate_client_pattern
-  description: "PLACEHOLDER — threshold_proximity but recurring legit client dinner"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: clean, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_007_placeholder_clean_sales_weekend
-  description: "PLACEHOLDER — weekend_frequency but employee in retail/sales"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: clean, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_008_placeholder_suspicious_geo_disputed
-  description: "PLACEHOLDER — geo_conflict, no travel record either way"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: suspicious, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_009_placeholder_suspicious_vendor_freq
-  description: "PLACEHOLDER — 7th visit to same merchant"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: suspicious, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_010_placeholder_suspicious_description_template
-  description: "PLACEHOLDER — generic descriptions for small legit purchases"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: suspicious, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_011_placeholder_fraud_duplicate_attendee
-  description: "PLACEHOLDER — same dinner expensed by two employees"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: fraud, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_012_placeholder_fraud_merchant_category_mismatch
-  description: "PLACEHOLDER — 'office supplies' at a hotel bar"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: fraud, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_013_placeholder_fraud_approver_collusion
-  description: "PLACEHOLDER — approver always greenlights suspect cases"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: fraud, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_014_placeholder_multi_finding_4_signals
-  description: "PLACEHOLDER — 4 Layer-1 rules fire simultaneously"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: fraud, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_015_placeholder_multi_finding_5_signals_diverse
-  description: "PLACEHOLDER — 5 rules from 3+ categories"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: fraud, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_016_placeholder_multi_finding_with_high_score
-  description: "PLACEHOLDER — pre_resignation_rush AND duplicate_attendee"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: fraud, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_017_placeholder_boundary_79_combined_risk
-  description: "PLACEHOLDER — combined_risk just below threshold (should NOT trigger)"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 79
-  human_label: { expected_verdict: clean, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER — also: this case shouldn't reach the agent in pipeline; eval here is for direct call testing"
-
-- id: fri_018_placeholder_boundary_80_combined_risk
-  description: "PLACEHOLDER — combined_risk exactly at threshold"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: suspicious, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
-
-- id: fri_019_placeholder_executive_high_baseline
-  description: "PLACEHOLDER — VP-level submission (different baseline expectations)"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: clean, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER — VP routinely expenses dinners that would be suspect for L3"
-
-- id: fri_020_placeholder_new_hire_no_baseline
-  description: "PLACEHOLDER — new hire, < 3 months, no peer baseline yet"
-  context: {}
-  submission: {}
-  fraud_signals: []
-  risk_score: 80
-  human_label: { expected_verdict: suspicious, must_call_tools: [] }
-  labeler_note: "PLACEHOLDER"
