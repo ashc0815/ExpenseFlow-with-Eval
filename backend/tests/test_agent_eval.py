@@ -267,10 +267,13 @@ def test_eval_case(case: dict[str, Any]) -> None:  # noqa: C901
 # ── Case runners ──────────────────────────────────────────────────────────────
 
 def _run_qa_case(case: dict, headers: dict, expect: dict) -> None:
+    body: dict[str, Any] = {"messages": [{"role": "user", "content": case["message"]}]}
+    if case.get("context"):
+        body["context"] = case["context"]
     resp = client.post(
         "/api/chat/message",
         headers=headers,
-        json={"messages": [{"role": "user", "content": case["message"]}]},
+        json=body,
     )
     expected_status = expect.get("http_status", 200)
     assert resp.status_code == expected_status, \

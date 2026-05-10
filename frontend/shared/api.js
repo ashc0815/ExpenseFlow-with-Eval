@@ -1,5 +1,5 @@
 /**
- * api.js — Thin wrapper around the ConcurShield backend REST API.
+ * api.js — Thin wrapper around the ExpenseFlow backend REST API.
  *
  * Usage:
  *   const submissions = await api.listSubmissions();

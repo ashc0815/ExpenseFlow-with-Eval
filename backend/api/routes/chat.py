@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 import uuid
 from pathlib import Path
 from datetime import date, datetime, timezone
@@ -1383,15 +1384,29 @@ class MockLLM(BaseLLM):
                     best_risk = risk_val
                     ctx_line_id = sid
 
-        why_kws    = ("为什么", "why", "原因", "怎么", "高风险", "风险", "解释")
-        queue_kws  = ("待审", "队列", "等我", "等审", "需要我", "queue", "pending", "approval")
-        team_kws   = ("团队", "部门", "team", "本月花", "本季度", "department", "支出")
+        explicit_submission_id = self._extract_named_id(text, ("submission_id", "id"))
+        explicit_employee_id = self._extract_named_id(text, ("employee_id",))
 
-        if any(k in text for k in why_kws) and ctx_line_id:
+        why_kws     = ("为什么", "why", "原因", "怎么", "高风险", "风险", "解释", "分析")
+        history_kws = ("历史", "消费模式", "记录", "习惯", "history", "pattern")
+        queue_kws   = ("待审", "队列", "等我", "等审", "需要我", "queue", "pending", "approval")
+        team_kws    = ("团队", "部门", "team", "本月花", "本季度", "department", "支出")
+
+        if any(k in text for k in why_kws) and (explicit_submission_id or ctx_line_id):
+            submission_id = explicit_submission_id or ctx_line_id
             return LLMResponse(
                 text="我去拉一下这张单的审计报告…",
                 tool_calls=[self._tool_call(
-                    "get_submission_for_review", {"submission_id": ctx_line_id},
+                    "get_submission_for_review", {"submission_id": submission_id},
+                )],
+                stop_reason="tool_use",
+            )
+        if explicit_employee_id and any(k in text for k in history_kws):
+            return LLMResponse(
+                text="我查一下这位员工的历史报销记录…",
+                tool_calls=[self._tool_call(
+                    "get_employee_submission_history",
+                    {"employee_id": explicit_employee_id},
                 )],
                 stop_reason="tool_use",
             )
@@ -1424,6 +1439,14 @@ class MockLLM(BaseLLM):
             ),
             stop_reason="end_turn",
         )
+
+    @staticmethod
+    def _extract_named_id(text: str, names: tuple[str, ...]) -> Optional[str]:
+        for name in names:
+            match = re.search(rf"\b{name}\s*=\s*([a-z0-9][a-z0-9_-]*)", text)
+            if match:
+                return match.group(1)
+        return None
 
     @staticmethod
     def _fmt_review(r: dict) -> str:

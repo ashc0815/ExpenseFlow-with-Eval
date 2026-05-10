@@ -510,5 +510,24 @@
   loadList();
 })();
 </script>
+
+<script>
+window.aiPageContext = function () {
+  var ctx = { page: "manager-queue" };
+  var active = document.querySelector(".inbox-item.active");
+  if (active) {
+    var id = (active.id || "").replace("item-", "");
+    if (id) ctx.report_id = id;
+  }
+  return ctx;
+};
+window.addEventListener("ai-assistant-event", function (e) {
+  var ev = e.detail;
+  if (ev.type === "tool_result" && ev.result && !ev.result.error) {
+    loadList();
+  }
+});
+</script>
+<script src="/shared/ai-assistant.js"></script>
 </body>
 </html>

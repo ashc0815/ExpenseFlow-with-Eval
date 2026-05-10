@@ -15,13 +15,13 @@ from backend.api.middleware.auth import UserContext, require_auth, require_role
 from backend.api.routes.submissions import _sub_dict
 from backend.db.store import (
     Employee, Report, Submission,
-    append_audit_step, create_audit_log, create_notification, create_report,
+    create_audit_log, create_notification, create_report,
     get_db, get_employee, get_or_create_open_report, get_report,
     list_report_drafts, list_report_submissions, list_reports_for_employee,
-    next_voucher_number, set_report_status, update_submission_finance,
-    update_submission_status,
+    set_report_status,
 )
 from backend.quick.finalize import finalize_report
+from backend.services import report_transitions
 
 router = APIRouter()
 
@@ -46,6 +46,10 @@ class BulkApproveBody(BaseModel):
 
 
 # ── Helpers ──────────────────────────────────────────────────────
+
+def _transition_conflict(exc: report_transitions.ReportTransitionError) -> HTTPException:
+    return HTTPException(status_code=409, detail=exc.detail)
+
 
 def _report_dict(r) -> dict:
     return {
@@ -347,47 +351,17 @@ async def finance_approve_report(
     report = await get_report(db, report_id)
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
-    if report.status != "manager_approved":
-        raise HTTPException(
-            status_code=409,
-            detail=f"当前状态 {report.status}，不可财务审批",
+    try:
+        result = await report_transitions.finance_approve_report(
+            db, report, actor_id=ctx.user_id, comment=body.comment,
         )
-
-    subs = await list_report_submissions(db, report_id)
-    now = datetime.now(timezone.utc)
-    # Idempotent: passes report_id so a retry after partial failure reuses
-    # the voucher number already attached to this report.
-    voucher = await next_voucher_number(db, report_id=report_id)
-    for s in subs:
-        if s.status == "manager_approved":
-            await update_submission_finance(
-                db, s.id,
-                status="finance_approved",
-                finance_approver_id=ctx.user_id,
-                finance_approver_comment=body.comment,
-                voucher_number=voucher,
-            )
-            await append_audit_step(
-                db, s.id,
-                message=f"财务 {ctx.user_id} 整单批准，凭证号 {voucher}",
-                phase="finance_approved",
-            )
-
-    # Per-report voucher: write the voucher number on the Report itself so
-    # downstream readers (export page, audit, ERP push) treat the report as
-    # the unit of voucher (one business event = one voucher).
-    report.status = "finance_approved"
-    report.voucher_number = voucher
-    report.voucher_posted_at = now
-    report.updated_at = now
-    await db.commit()
-
-    await create_audit_log(
-        db, actor_id=ctx.user_id, action="report_finance_approved",
-        resource_type="report", resource_id=report_id,
-        detail={"comment": body.comment, "voucher": voucher, "line_count": len(subs)},
-    )
-    return {"status": "ok", "voucher_number": voucher, "report_id": report_id}
+    except report_transitions.ReportTransitionError as exc:
+        raise _transition_conflict(exc) from exc
+    return {
+        "status": "ok",
+        "voucher_number": result.voucher_number,
+        "report_id": report_id,
+    }
 
 
 @router.post("/{report_id}/finance-reject")
@@ -400,32 +374,12 @@ async def finance_reject_report(
     report = await get_report(db, report_id)
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
-    if report.status != "manager_approved":
-        raise HTTPException(
-            status_code=409,
-            detail=f"当前状态 {report.status}，不可拒绝",
+    try:
+        await report_transitions.finance_reject_report(
+            db, report, actor_id=ctx.user_id, comment=body.comment,
         )
-
-    subs = await list_report_submissions(db, report_id)
-    now = datetime.now(timezone.utc)
-    for s in subs:
-        if s.status == "manager_approved":
-            await update_submission_finance(
-                db, s.id,
-                status="rejected",
-                finance_approver_id=ctx.user_id,
-                finance_approver_comment=body.comment,
-            )
-
-    report.status = "rejected"
-    report.updated_at = now
-    await db.commit()
-
-    await create_audit_log(
-        db, actor_id=ctx.user_id, action="report_finance_rejected",
-        resource_type="report", resource_id=report_id,
-        detail={"comment": body.comment, "line_count": len(subs)},
-    )
+    except report_transitions.ReportTransitionError as exc:
+        raise _transition_conflict(exc) from exc
     return {"status": "ok", "report_id": report_id}
 
 
@@ -439,32 +393,17 @@ async def finance_bulk_approve_reports(
     results = {"approved": [], "skipped": []}
     for rid in body.ids:
         report = await get_report(db, rid)
-        if not report or report.status != "manager_approved":
+        if not report:
             results["skipped"].append(rid)
             continue
-        subs = await list_report_submissions(db, rid)
-        now = datetime.now(timezone.utc)
-        voucher = await next_voucher_number(db, report_id=rid)
-        for s in subs:
-            if s.status == "manager_approved":
-                await update_submission_finance(
-                    db, s.id,
-                    status="finance_approved",
-                    finance_approver_id=ctx.user_id,
-                    finance_approver_comment=body.comment,
-                    voucher_number=voucher,
-                )
-        report.status = "finance_approved"
-        report.voucher_number = voucher
-        report.voucher_posted_at = now
-        report.updated_at = now
-        await db.commit()
-        await create_audit_log(
-            db, actor_id=ctx.user_id, action="report_finance_approved",
-            resource_type="report", resource_id=rid,
-            detail={"bulk": True, "comment": body.comment, "voucher": voucher},
-        )
-        results["approved"].append({"id": rid, "voucher": voucher})
+        try:
+            result = await report_transitions.finance_approve_report(
+                db, report, actor_id=ctx.user_id, comment=body.comment, bulk=True,
+            )
+        except report_transitions.ReportTransitionError:
+            results["skipped"].append(rid)
+            continue
+        results["approved"].append({"id": rid, "voucher": result.voucher_number})
     return results
 
 
@@ -586,37 +525,12 @@ async def approve_report(
     report = await get_report(db, report_id)
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
-    if report.status != "pending":
-        raise HTTPException(
-            status_code=409,
-            detail=f"当前状态 {report.status}，不可审批",
+    try:
+        await report_transitions.manager_approve_report(
+            db, report, actor_id=ctx.user_id, comment=body.comment,
         )
-
-    subs = await list_report_submissions(db, report_id)
-    actionable = ("processing", "reviewed", "review_failed")
-    now = datetime.now(timezone.utc)
-    for s in subs:
-        if s.status in actionable:
-            s.status = "manager_approved"
-            s.approver_id = ctx.user_id
-            s.approver_comment = body.comment
-            s.approved_at = now
-            s.updated_at = now
-            await append_audit_step(
-                db, s.id,
-                message=f"经理 {ctx.user_id} 整单批准",
-                phase="manager_approved",
-            )
-
-    report.status = "manager_approved"
-    report.updated_at = now
-    await db.commit()
-
-    await create_audit_log(
-        db, actor_id=ctx.user_id, action="report_approved",
-        resource_type="report", resource_id=report_id,
-        detail={"comment": body.comment, "line_count": len(subs)},
-    )
+    except report_transitions.ReportTransitionError as exc:
+        raise _transition_conflict(exc) from exc
     return await _report_payload(db, report)
 
 
@@ -630,31 +544,12 @@ async def reject_report(
     report = await get_report(db, report_id)
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
-    if report.status != "pending":
-        raise HTTPException(
-            status_code=409,
-            detail=f"当前状态 {report.status}，不可拒绝",
+    try:
+        await report_transitions.manager_reject_report(
+            db, report, actor_id=ctx.user_id, comment=body.comment,
         )
-
-    subs = await list_report_submissions(db, report_id)
-    actionable = ("processing", "reviewed", "review_failed")
-    now = datetime.now(timezone.utc)
-    for s in subs:
-        if s.status in actionable:
-            s.status = "rejected"
-            s.approver_id = ctx.user_id
-            s.approver_comment = body.comment
-            s.updated_at = now
-
-    report.status = "rejected"
-    report.updated_at = now
-    await db.commit()
-
-    await create_audit_log(
-        db, actor_id=ctx.user_id, action="report_rejected",
-        resource_type="report", resource_id=report_id,
-        detail={"comment": body.comment, "line_count": len(subs)},
-    )
+    except report_transitions.ReportTransitionError as exc:
+        raise _transition_conflict(exc) from exc
     return await _report_payload(db, report)
 
 
@@ -668,43 +563,14 @@ async def return_report_for_revision(
     report = await get_report(db, report_id)
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
-    if report.employee_id == ctx.user_id:
-        raise HTTPException(status_code=403, detail="不能退回自己的报销单")
-    if report.status != "pending":
-        raise HTTPException(
-            status_code=409,
-            detail=f"当前状态 {report.status}，不可退回",
+    try:
+        await report_transitions.return_report_for_revision(
+            db, report, actor_id=ctx.user_id, reason=body.reason,
         )
-
-    subs = await list_report_submissions(db, report_id)
-    actionable = ("processing", "reviewed", "review_failed")
-    now = datetime.now(timezone.utc)
-    for s in subs:
-        if s.status in actionable:
-            s.status = "needs_revision"
-            s.approver_id = ctx.user_id
-            s.approver_comment = body.reason
-            s.updated_at = now
-
-    report.status = "needs_revision"
-    report.revision_reason = body.reason
-    report.updated_at = now
-    await db.commit()
-
-    await create_notification(
-        db,
-        recipient_id=report.employee_id,
-        kind="report_returned",
-        title=f"报销单「{report.title}」被退回修改",
-        body=f"退回原因：{body.reason}",
-        link=f"/employee/report.html?report_id={report_id}",
-    )
-
-    await create_audit_log(
-        db, actor_id=ctx.user_id, action="report_returned",
-        resource_type="report", resource_id=report_id,
-        detail={"reason": body.reason, "line_count": len(subs)},
-    )
+    except report_transitions.ReportTransitionError as exc:
+        if exc.detail == "不能退回自己的报销单":
+            raise HTTPException(status_code=403, detail=exc.detail) from exc
+        raise _transition_conflict(exc) from exc
     return await _report_payload(db, report)
 
 

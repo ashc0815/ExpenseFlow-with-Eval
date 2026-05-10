@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="review.title">财务复核 — ConcurShield</title>
+  <title data-i18n="review.title">财务复核 — ExpenseFlow</title>
   <link rel="stylesheet" href="/shared/styles.css">
   <link rel="stylesheet" href="/shared/ai-card.css">
   <script>
@@ -140,6 +140,7 @@ function fmtMoney(currency, amount) {
         `<div class="alert alert-error">${t('review.load-fail')}${err.message}</div>`;
     }
   }
+  window.loadList = loadList;
 
   function renderStats() {
     const strip = document.getElementById('stats-strip');
@@ -460,5 +461,24 @@ function fmtMoney(currency, amount) {
   loadList();
 })();
 </script>
+
+<script>
+window.aiPageContext = function () {
+  var ctx = { page: "finance-review" };
+  var active = document.querySelector(".inbox-item.active");
+  if (active) {
+    var match = (active.outerHTML || "").match(/_selectItem\('([^']+)'\)/);
+    if (match) ctx.report_id = match[1];
+  }
+  return ctx;
+};
+window.addEventListener("ai-assistant-event", function (e) {
+  var ev = e.detail;
+  if (ev.type === "tool_result" && ev.result && !ev.result.error) {
+    if (typeof window.loadList === "function") window.loadList();
+  }
+});
+</script>
+<script src="/shared/ai-assistant.js"></script>
 </body>
 </html>
