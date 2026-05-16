@@ -137,6 +137,17 @@ def event_tool_names(events: list[dict]) -> list[str]:
     return [e.get("name", "") for e in events if e.get("type") == "tool_call"]
 
 
+def event_subagents(events: list[dict]) -> list[str]:
+    """Return subagent names observed in subagent_step/tool_call events."""
+    names: list[str] = []
+    for event in events:
+        if event.get("type") in {"subagent_step", "tool_call", "tool_result"}:
+            name = event.get("subagent")
+            if name and name not in names:
+                names.append(str(name))
+    return names
+
+
 def assistant_text(events: list[dict]) -> str:
     """Concatenate streamed assistant text events for response graders."""
     return " ".join(e.get("text", "") for e in events if e.get("type") == "assistant_text")
@@ -156,6 +167,21 @@ def grade_forbidden_tools_absent(events: list[dict], forbidden: list[str]) -> tu
     present = [name for name in forbidden if name in names]
     passed = not present
     return passed, f"present={present}; called={names}"
+
+
+def grade_required_subagents(events: list[dict], required: list[str]) -> tuple[bool, str]:
+    """Binary check: expected subagent nodes appeared in the trajectory."""
+    names = event_subagents(events)
+    missing = [name for name in required if name not in names]
+    passed = not missing
+    return passed, f"missing={missing}; subagents={names}"
+
+
+def grade_agent_trace_present(events: list[dict], expected: bool = True) -> tuple[bool, str]:
+    """Binary check: run_agent emitted the aggregate agent_trace event."""
+    present = any(e.get("type") == "agent_trace" for e in events)
+    passed = present == expected
+    return passed, f"agent_trace_present={present}"
 
 
 def grade_response_contains(events: list[dict], required_phrases: list[str]) -> tuple[bool, str]:

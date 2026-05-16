@@ -1,8 +1,8 @@
 """Commit 3 — Stateless Q&A agent endpoint smoke test.
 
 Verifies：
-  1. POST /api/chat/message returns an SSE stream that runs the agent
-     with agent_role="employee", reads from the QA tool whitelist.
+  1. POST /api/chat/message returns an SSE stream that runs the unified
+     expense assistant with the stateless QA tool surface.
   2. "这个月花了多少" triggers a get_spend_summary tool_call.
   3. Agent emits a final assistant_text summarizing the spend and ends.
   4. The whitelist is enforced at dispatch time: attempting to dispatch
@@ -150,7 +150,7 @@ def test_qa_default_welcome_for_unrelated_question():
 
 def test_qa_tool_whitelist_blocks_forbidden_dispatch():
     """Prompt-injection defense: even if the LLM hallucinates an update_draft_field
-    tool_call, the dispatcher rejects it because 'employee' doesn't allow it.
+    tool_call, the stateless drawer rejects draft writes without a draft_id.
     """
     from backend.api.routes import chat as chat_mod
 
@@ -158,7 +158,7 @@ def test_qa_tool_whitelist_blocks_forbidden_dispatch():
         """Pretends to be an LLM that's been prompt-injected into calling
         a forbidden write tool. Should be blocked at dispatch."""
         _called = False
-        async def next_turn(self, messages, tools, agent_role="employee_submit"):
+        async def next_turn(self, messages, tools, agent_role="expense_assistant"):
             if not InjectedLLM._called:
                 InjectedLLM._called = True
                 return chat_mod.LLMResponse(
@@ -188,7 +188,7 @@ def test_qa_tool_whitelist_blocks_forbidden_dispatch():
         result = tool_results[0]["result"]
         assert "error" in result
         assert "not allowed" in result["error"]
-        assert result["error"].endswith("'employee'")
+        assert result["error"].endswith("'expense_assistant'")
         # And the tool name that got blocked is update_draft_field
         assert tool_results[0]["name"] == "update_draft_field"
     finally:

@@ -131,41 +131,6 @@
     .error-card .error-icon { font-size: 2.5rem; margin-bottom: .5rem; }
     .error-card .error-title { font-weight: 700; color: #991b1b; font-size: 1rem; margin-bottom: .3rem; }
     .error-card .error-sub { color: #b91c1c; font-size: .85rem; margin-bottom: 1rem; }
-    /* chat input inside form */
-    .form-chat {
-      margin-top: 1rem; border-top: 1px solid #e2e8f0; padding-top: .8rem;
-    }
-    .form-chat-messages {
-      max-height: 120px; overflow-y: auto; display: flex; flex-direction: column;
-      gap: .4rem; margin-bottom: .5rem;
-    }
-    .form-chat-msg {
-      font-size: .82rem; line-height: 1.4; padding: .4rem .6rem;
-      border-radius: 8px; max-width: 90%; word-break: break-word;
-    }
-    .form-chat-msg.user {
-      align-self: flex-end; background: #18b48e; color: white;
-      border-bottom-right-radius: 3px;
-    }
-    .form-chat-msg.assistant {
-      align-self: flex-start; background: #f1f5f9; color: #0f172a;
-      border-bottom-left-radius: 3px;
-    }
-    .form-chat-row {
-      display: flex; gap: .4rem;
-    }
-    .form-chat-row input {
-      flex: 1; border: 1px solid #e2e8f0; border-radius: 8px;
-      padding: .45rem .6rem; font-size: .85rem; outline: none;
-    }
-    .form-chat-row input:focus { border-color: #18b48e; }
-    .form-chat-row button {
-      background: #18b48e; color: white; border: none; border-radius: 8px;
-      padding: .45rem .8rem; font-size: .85rem; font-weight: 600; cursor: pointer;
-      white-space: nowrap;
-    }
-    .form-chat-row button:disabled { background: #cbd5e1; cursor: not-allowed; }
-
     .faq-section { margin-top: 1.5rem; }
     .faq-item { border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: .4rem; overflow: hidden; }
     .faq-q {
@@ -249,6 +214,7 @@ let CURRENT_REPORT_ID = urlParams.get("report_id") || null;
 
 let fxRates = {};
 let homeCurrency = "CNY";
+let activeDraftId = null;
 
 async function loadFxData() {
   try {
@@ -330,6 +296,31 @@ async function handleUpload(file) {
     showScanProgress(d.draft_id, file);
     streamPipeline(d.draft_id, file);
   }
+}
+
+async function startExternalEvidenceDraft(options = {}) {
+  if (activeDraftId && draftData[activeDraftId]) return activeDraftId;
+  const r = await fetch("/api/chat/drafts", { method: "POST", headers: await getAuth() });
+  if (!r.ok) { alert(t('quick.upload-fail') + r.status); return; }
+  const draft = await r.json();
+  const draftId = draft.id || draft.draft_id;
+  activeDraftId = draftId;
+  draftData[draftId] = {
+    file: null,
+    fields: draft.fields || {},
+    sources: draft.field_sources || {},
+    isDuplicate: false,
+    layer: "2",
+    receiptUrl: null,
+  };
+  document.getElementById("upload-section").style.display = "none";
+  document.getElementById("scan-section").style.display = "none";
+  document.getElementById("success-section").style.display = "none";
+  await showForm(draftId);
+  if (options.openAssistant && window.aiAssistantOpen) {
+    window.aiAssistantOpen();
+  }
+  return draftId;
 }
 
 // ── Scan progress ───────────────────────────────────────────
@@ -511,12 +502,16 @@ async function showForm(draftId) {
     return;
   }
 
+  function isAutoSource(value) {
+    const v = String(value || "");
+    return ["ai", "ocr", "pipeline"].includes(v) || v.startsWith("didi");
+  }
   function fieldClass(key) {
-    return s[key] === "ai" || s[key] === "ocr" || s[key] === "pipeline" ? "ai-filled" : "";
+    return isAutoSource(s[key]) ? "ai-filled" : "";
   }
   function badge(key) {
-    if (s[key] === "ai" || s[key] === "ocr" || s[key] === "pipeline")
-      return `<span class="ai-badge">AI</span>`;
+    if (isAutoSource(s[key]))
+      return `<span class="ai-badge">${String(s[key] || "").startsWith("didi") ? "Didi" : "AI"}</span>`;
     if (!f[key] && ["merchant","amount","date","category"].includes(key))
       return `<span class="confirm-badge">${t('quick.need-fill')}</span>`;
     return "";
@@ -620,15 +615,6 @@ async function showForm(draftId) {
             : ""
           }
         </select>
-      </div>
-
-      <div class="form-chat" id="chat-area-${draftId}">
-        <div class="form-chat-messages" id="chat-msgs-${draftId}"></div>
-        <div class="form-chat-row">
-          <input id="chat-input-${draftId}" placeholder="${t('quick.chat-placeholder') || '告诉 AI 修改字段，例如：把金额改成 380'}"
-            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg('${draftId}');}">
-          <button id="chat-send-${draftId}" onclick="sendChatMsg('${draftId}')">${t('quick.chat-send') || '发送'}</button>
-        </div>
       </div>
 
       <div id="form-alert-${draftId}"></div>
@@ -765,65 +751,7 @@ function openLineDetail(lineId, isDraft) {
 </script>
 
 <script>
-// ── Chat-to-Agent for field modification ──────────────────
-async function sendChatMsg(draftId) {
-  const input = document.getElementById(`chat-input-${draftId}`);
-  const sendBtn = document.getElementById(`chat-send-${draftId}`);
-  const msgsEl = document.getElementById(`chat-msgs-${draftId}`);
-  const text = input.value.trim();
-  if (!text) return;
-
-  msgsEl.innerHTML += `<div class="form-chat-msg user">${escHtml(text)}</div>`;
-  msgsEl.scrollTop = msgsEl.scrollHeight;
-  input.value = "";
-  sendBtn.disabled = true;
-
-  try {
-    const authH = await getAuth();
-    const resp = await fetch(`/api/chat/drafts/${draftId}/message`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authH },
-      body: JSON.stringify({ message: text }),
-    });
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let assistantText = "";
-    let buffer = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      let lines = buffer.split("\n");
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        if (!line.startsWith("data: ")) continue;
-        let ev;
-        try { ev = JSON.parse(line.slice(6)); } catch { continue; }
-
-        if (ev.type === "assistant_text") {
-          assistantText += ev.text;
-        } else if (ev.type === "draft_updated") {
-          applyDraftUpdate(draftId, ev.fields || {}, ev.field_sources || {});
-        }
-      }
-    }
-
-    if (assistantText) {
-      msgsEl.innerHTML += `<div class="form-chat-msg assistant">${escHtml(assistantText)}</div>`;
-      msgsEl.scrollTop = msgsEl.scrollHeight;
-    }
-  } catch (err) {
-    msgsEl.innerHTML += `<div class="form-chat-msg assistant" style="color:#dc2626">请求失败: ${escHtml(err.message)}</div>`;
-  } finally {
-    sendBtn.disabled = false;
-    input.focus();
-  }
-}
-
+// ── Unified AI drawer integration ─────────────────────────
 function applyDraftUpdate(draftId, fields, sources) {
   const fieldMap = {
     merchant: `qf-merchant-${draftId}`,
@@ -850,15 +778,6 @@ function applyDraftUpdate(draftId, fields, sources) {
   }
 }
 
-function escHtml(s) {
-  const d = document.createElement("div");
-  d.textContent = s;
-  return d.innerHTML;
-}
-
-// ── AI Assistant config: route sidebar to employee_submit agent ──
-let activeDraftId = null;
-
 const _origShowForm = showForm;
 showForm = async function(draftId) {
   activeDraftId = draftId;
@@ -866,7 +785,23 @@ showForm = async function(draftId) {
 };
 
 window.aiPageContext = function() {
-  return activeDraftId ? { page: "quick", draft_id: activeDraftId } : { page: "quick" };
+  const base = {
+    page: "quick",
+    surface: "quick_expense",
+    permissions: ["read_policy", "lookup_external_evidence", "update_draft"],
+  };
+  return activeDraftId ? { ...base, draft_id: activeDraftId } : base;
+};
+
+window.aiAssistantBeforeSend = async function(payload) {
+  const text = String((payload && payload.text) || "").toLowerCase();
+  const isPolicyOnly = /政策|规定|限额|标准|policy/.test(text)
+    && !/补齐|补全|无发票|没有发票|发票找不到|滴滴|didi|携程|信用卡|修改|改成/.test(text);
+  const needsDraft = !isPolicyOnly && /补齐|补全|无发票|没有发票|发票找不到|滴滴|didi|携程|信用卡|修改|改成|字段|金额|类别|商户|日期/.test(text);
+  if (needsDraft && !activeDraftId) {
+    await startExternalEvidenceDraft();
+  }
+  return { context: window.aiPageContext() };
 };
 
 window.addEventListener("ai-assistant-event", function(e) {
@@ -876,6 +811,6 @@ window.addEventListener("ai-assistant-event", function(e) {
 });
 </script>
 
-<script src="/shared/ai-assistant.js?v=20260506"></script>
+<script src="/shared/ai-assistant.js?v=20260516-didi-prefill"></script>
 </body>
 </html>

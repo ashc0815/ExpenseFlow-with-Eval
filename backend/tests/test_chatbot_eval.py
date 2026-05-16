@@ -1,4 +1,4 @@
-"""Chatbot expense assistant eval harness.
+"""Unified Expense Assistant eval harness.
 
 This suite evaluates the chat/tool layer for:
   - policy QA
@@ -36,21 +36,24 @@ _DB_URL = f"sqlite+aiosqlite:///{_TMP_DB.name}"
 os.environ.setdefault("DATABASE_URL", _DB_URL)
 os.environ.setdefault("AUTH_MODE", "mock")
 os.environ.setdefault("STORAGE_BACKEND", "local")
-os.environ.setdefault("UPLOAD_DIR", "/tmp/expenseflow_chatbot_eval")
+os.environ.setdefault("UPLOAD_DIR", "/tmp/expenseflow_unified_expense_assistant_eval")
 
 from backend.api.middleware.auth import UserContext
 from backend.api.routes import chat as chat_mod
 from backend.db.store import Base, create_draft, get_draft
 from backend.tests.graders.code_graders import (
     assistant_text,
+    event_subagents,
     event_tool_names,
     grade_field_sources_include,
     grade_fields_absent,
     grade_final_fields,
     grade_forbidden_tools_absent,
+    grade_agent_trace_present,
     grade_must_call_tools,
     grade_response_contains,
     grade_response_excludes,
+    grade_required_subagents,
     grade_tool_args,
 )
 
@@ -134,7 +137,7 @@ class ScriptedEvalLLM(chat_mod.BaseLLM):
         self,
         messages: list[dict],
         tools: list[dict],
-        agent_role: str = "employee_submit",
+        agent_role: str = "expense_assistant",
     ) -> chat_mod.LLMResponse:
         turns = self.case.get("scripted_turns") or []
         if self.turn_index < len(turns):
@@ -182,7 +185,7 @@ def test_chatbot_eval_case(case: dict, model_name: str) -> None:
 
 
 async def _run_case(case: dict, model_name: str) -> dict:
-    agent_role = _agent_role_for_case(case)
+    agent_role = "expense_assistant"
     ctx = UserContext(user_id="emp-chatbot-eval", roles=["employee"])
     start = time.perf_counter()
     events: list[dict] = []
@@ -193,7 +196,7 @@ async def _run_case(case: dict, model_name: str) -> dict:
     chat_mod.get_llm = lambda: ScriptedEvalLLM(case, model_name)
     try:
         async with _Session() as db:
-            if agent_role == "employee_submit":
+            if _case_needs_draft(case):
                 draft = await create_draft(db, ctx.user_id)
                 draft_id = draft.id
                 user_message = _latest_user_message(case)
@@ -236,6 +239,8 @@ async def _run_case(case: dict, model_name: str) -> dict:
         "passed": passed,
         "graders": graders,
         "tool_calls": event_tool_names(events),
+        "subagents": event_subagents(events),
+        "agent_trace_steps": _agent_trace_steps(events),
         "tool_call_count": len(event_tool_names(events)),
         "assistant_text": assistant_text(events),
         "draft_fields": draft_fields,
@@ -246,10 +251,8 @@ async def _run_case(case: dict, model_name: str) -> dict:
     }
 
 
-def _agent_role_for_case(case: dict) -> str:
-    if case.get("scenario") == "receipt_completion":
-        return "employee_submit"
-    return "employee"
+def _case_needs_draft(case: dict) -> bool:
+    return case.get("scenario") == "receipt_completion"
 
 
 def _latest_user_message(case: dict) -> str:
@@ -273,6 +276,10 @@ def _grade_result(
     checks.append(("response_contains", *grade_response_contains(events, expect.get("response_contains") or [])))
     checks.append(("response_excludes", *grade_response_excludes(events, expect.get("response_not_contains") or [])))
 
+    if expect.get("required_subagents"):
+        checks.append(("required_subagents", *grade_required_subagents(events, expect["required_subagents"])))
+    if expect.get("agent_trace_present") is not None:
+        checks.append(("agent_trace_present", *grade_agent_trace_present(events, bool(expect["agent_trace_present"]))))
     if expect.get("final_fields"):
         checks.append(("final_fields", *grade_final_fields(draft_fields, expect["final_fields"])))
     if expect.get("final_fields_absent"):
@@ -289,6 +296,13 @@ def _grade_result(
         {"name": name, "passed": passed, "message": message}
         for name, passed, message in checks
     ]
+
+
+def _agent_trace_steps(events: list[dict]) -> list[dict]:
+    for event in reversed(events):
+        if event.get("type") == "agent_trace":
+            return event.get("steps") or []
+    return []
 
 
 def _estimate_tokens(case: dict, events: list[dict]) -> tuple[int, int]:
@@ -329,7 +343,7 @@ def _write_matrix_snapshot() -> None:
         "started_at": _RUN_START.isoformat(),
         "finished_at": finished.isoformat(),
         "dataset": str(_DATASET_PATH.name),
-        "run_target": os.getenv("EVAL_TRIGGER_COMPONENT", "chatbot"),
+        "run_target": os.getenv("EVAL_TRIGGER_COMPONENT", "unified_expense_assistant"),
         "requested_models": [
             name.strip()
             for name in os.getenv("EVAL_TRIGGER_MODELS", ",".join(_MODEL_NAMES)).split(",")

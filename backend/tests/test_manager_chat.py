@@ -31,6 +31,7 @@ os.environ.setdefault("DATABASE_URL", _DB_URL)
 os.environ.setdefault("AUTH_MODE", "mock")
 os.environ.setdefault("STORAGE_BACKEND", "local")
 os.environ.setdefault("UPLOAD_DIR", "/tmp/concurshield_mgr_test")
+os.environ["AGENT_USE_REAL_LLM"] = "0"
 
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -303,7 +304,7 @@ def test_manager_whitelist_blocks_write_tools():
 
     class InjectedLLM(chat_mod.BaseLLM):
         _called = False
-        async def next_turn(self, messages, tools, agent_role="employee_submit"):
+        async def next_turn(self, messages, tools, agent_role="expense_assistant"):
             if not InjectedLLM._called:
                 InjectedLLM._called = True
                 return chat_mod.LLMResponse(

@@ -38,6 +38,7 @@ os.environ.setdefault("DATABASE_URL", _DB_URL)
 os.environ.setdefault("AUTH_MODE", "mock")
 os.environ.setdefault("STORAGE_BACKEND", "local")
 os.environ.setdefault("UPLOAD_DIR", "/tmp/concurshield_eval_test")
+os.environ["AGENT_USE_REAL_LLM"] = "0"
 
 from backend.db.store import Base, create_submission, get_db, update_submission_analysis
 from backend.main import app
@@ -342,7 +343,7 @@ def _run_whitelist_case(case: dict, headers: dict, expect: dict) -> None:
             self._fired = False
 
         async def next_turn(
-            self, messages: list, tools: list, agent_role: str = "employee_submit"
+            self, messages: list, tools: list, agent_role: str = "expense_assistant"
         ) -> chat_mod.LLMResponse:
             if not self._fired:
                 self._fired = True

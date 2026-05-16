@@ -145,9 +145,8 @@ async def list_traces(
     q = select(LLMTrace)
 
     if component:
-        # Accept comma-separated list so a single UI filter (e.g. "Chat Agent")
-        # can match multiple concrete component values (chat_employee_submit /
-        # chat_employee / chat_manager_explain).
+        # Accept comma-separated list so a single UI filter can match the
+        # unified expense assistant and manager explain traces together.
         values = [v.strip() for v in component.split(",") if v.strip()]
         if len(values) == 1:
             q = q.where(LLMTrace.component == values[0])
@@ -396,8 +395,8 @@ async def trigger_eval(body: dict = {}) -> dict:
     """Trigger an eval run via pytest subprocess.
 
     Body (optional):
-      component: "fraud" | "ambiguity" | "deterministic" | "chatbot" | "all"
-      models: ["OpenAI-4o-mini", ...]      # chatbot model-matrix runner
+      component: "fraud" | "ambiguity" | "deterministic" | "unified_expense_assistant" | "all"
+      models: ["OpenAI-4o-mini", ...]      # unified assistant model-matrix runner
       datasets: []                         # reserved for future dataset filters
 
     Returns immediately with status; results appear in /runs after completion.
@@ -418,7 +417,7 @@ async def trigger_eval(body: dict = {}) -> dict:
         if str(d).strip()
     ]
 
-    if component in ("chat", "chatbot"):
+    if component in ("chat", "chatbot", "expense_assistant", "unified_expense_assistant"):
         cmd = [
             sys.executable, "-m", "pytest",
             "backend/tests/test_chatbot_eval.py",
@@ -455,9 +454,9 @@ async def trigger_eval(body: dict = {}) -> dict:
                 "EVAL_TRIGGER_MODELS": ",".join(requested_models),
                 "EVAL_TRIGGER_DATASETS": ",".join(requested_datasets),
             }
-            if requested_models and component in ("chat", "chatbot"):
+            if requested_models and component in ("chat", "chatbot", "expense_assistant", "unified_expense_assistant"):
                 env["CHATBOT_EVAL_MODELS"] = ",".join(requested_models)
-            if requested_datasets and component in ("chat", "chatbot"):
+            if requested_datasets and component in ("chat", "chatbot", "expense_assistant", "unified_expense_assistant"):
                 env["CHATBOT_EVAL_DATASETS"] = ",".join(requested_datasets)
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
@@ -689,7 +688,7 @@ async def get_human_ambiguity_eval() -> dict:
 
 @router.get("/chatbot/model-matrix")
 async def get_chatbot_model_matrix() -> dict:
-    """Return the latest chatbot expense-assistant model matrix snapshot.
+    """Return the latest unified expense-assistant model matrix snapshot.
 
     File is written by pytest backend/tests/test_chatbot_eval.py.
     """
@@ -697,7 +696,7 @@ async def get_chatbot_model_matrix() -> dict:
         return {
             "empty": True,
             "message": (
-                "No chatbot model-matrix run yet. Run: "
+                "No unified expense assistant model-matrix run yet. Run: "
                 "pytest backend/tests/test_chatbot_eval.py -q"
             ),
         }

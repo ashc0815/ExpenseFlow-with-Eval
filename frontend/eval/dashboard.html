@@ -332,7 +332,7 @@
     <div style="margin-top:1rem;">
       <div style="font-weight:700; font-size:.85rem; color:var(--gray-800)">2. Datasets</div>
       <div class="empty-state" style="padding:1rem; margin-top:.5rem; border:1px dashed var(--gray-200); border-radius:8px;">
-        Dataset picker is reserved for the next iteration. Current run uses the default chatbot eval suite.
+        Dataset picker is reserved for the next iteration. Current run uses the default unified expense assistant eval suite.
       </div>
     </div>
 
@@ -368,7 +368,7 @@
         <span class="icon">&#9998;</span> OCR
       </button>
       <button class="sidebar-nav-item" onclick="switchTab('comp-chat', this)">
-        <span class="icon">&#9993;</span> Chat Agent
+        <span class="icon">&#9993;</span> Unified Assistant
       </button>
     </div>
 
@@ -400,7 +400,7 @@
           <option value="fraud_llm_analyzer">Fraud LLM</option>
           <option value="ambiguity_detector">Ambiguity</option>
           <option value="ocr">OCR</option>
-          <option value="chat_employee_submit,chat_employee,chat_manager_explain">Chat Agent</option>
+          <option value="chat_expense_assistant,chat_manager_explain">Unified Expense Assistant</option>
         </select>
       </div>
       <div class="sidebar-filter">
@@ -479,7 +479,7 @@
         </div>
       </div>
       <div class="comp-section">
-        <div class="comp-section-title">Chatbot Expense Assistant Model Matrix</div>
+        <div class="comp-section-title">Unified Expense Assistant Model Matrix</div>
         <div id="chatbot-model-matrix"><div class="empty-state">Loading...</div></div>
       </div>
       <div class="comp-section">
@@ -561,8 +561,7 @@
           <option value="fraud_llm_analyzer">fraud_llm_analyzer</option>
           <option value="fraud_investigator">fraud_investigator (OODA)</option>
           <option value="ocr">ocr</option>
-          <option value="chat_employee">chat_employee</option>
-          <option value="chat_employee_submit">chat_employee_submit</option>
+          <option value="chat_expense_assistant">chat_expense_assistant</option>
           <option value="chat_manager_explain">chat_manager_explain</option>
         </select>
         <button class="btn btn-outline btn-sm" onclick="loadReviewTab()">Refresh</button>
@@ -662,10 +661,10 @@ const COMP_DEFS = {
     evalCmd: "pytest backend/tests/test_eval_harness.py -k 'ocr' -v",
   },
   chat: {
-    name: "Chat Agent",
+    name: "Unified Expense Assistant",
     icon: "&#9993;",
-    subtitle: "GPT-4o | Employee Submit / QA / Manager Explain",
-    promptKeys: ["chat_employee_submit", "chat_employee", "chat_manager_explain"],
+    subtitle: "GPT-4o | Policy QA / Draft Completion / External Evidence",
+    promptKeys: ["chat_expense_assistant", "chat_manager_explain"],
     configKeys: [],
     casePrefix: ["chat_", "agent_"],
     evalCmd: "pytest backend/tests/test_agent_eval.py -v",
@@ -786,7 +785,7 @@ function renderChatbotModelMatrix(data, targetId) {
   if (!target) return;
   if (!data || data.empty) {
     target.innerHTML = '<div class="empty-state">'
-      + esc((data && data.message) || "No chatbot model-matrix run yet.")
+      + esc((data && data.message) || "No unified expense assistant model-matrix run yet.")
       + '<br><code style="font-size:.75rem">pytest backend/tests/test_chatbot_eval.py -q</code>'
       + "</div>";
     return;
@@ -824,9 +823,9 @@ function renderChatbotModelMatrix(data, targetId) {
   target.innerHTML =
     '<div class="meta-pills">'
     + '<span class="meta-pill"><span class="pill-key">Dataset:</span> ' + esc(data.dataset || "") + "</span>"
-    + '<span class="meta-pill"><span class="pill-key">Run target:</span> ' + esc(data.run_target || "chatbot") + "</span>"
+    + '<span class="meta-pill"><span class="pill-key">Run target:</span> ' + esc(data.run_target || "unified_expense_assistant") + "</span>"
     + '<span class="meta-pill"><span class="pill-key">Cases:</span> ' + esc(String(data.total_cases || 0)) + "</span>"
-    + '<span class="meta-pill"><span class="pill-key">Datasets:</span> ' + esc((data.requested_datasets || []).join(", ") || "default chatbot suite") + "</span>"
+    + '<span class="meta-pill"><span class="pill-key">Datasets:</span> ' + esc((data.requested_datasets || []).join(", ") || "default unified suite") + "</span>"
     + '<span class="meta-pill"><span class="pill-key">Finished:</span> ' + esc(fmtTime(data.finished_at)) + "</span>"
     + "</div>"
     + '<div style="font-weight:700; font-size:.82rem; margin:.7rem 0 .35rem; color:var(--gray-700)">By Model</div>'
@@ -1351,7 +1350,7 @@ async function loadComponentConfig(compKey) {
     var h = '<div class="comp-section-title"><span class="icon">&#9881;</span> Config Thresholds</div>';
 
     if (!hasThresholds) {
-      // Still render the LLM Parameters panel below — OCR and Chat Agent have
+      // Still render the LLM Parameters panel below — OCR and Unified Assistant have
       // no per-component thresholds but do call OpenAI and want the same
       // model/temperature/max_tokens visibility.
       h += '<div class="empty-state">No component-specific thresholds. LLM parameters below are shared with other components.</div>';
@@ -2236,7 +2235,7 @@ async function startConfiguredEval() {
   status.textContent = "";
 
   // Map compKey to backend component name
-  var compMap = { fraud: "deterministic", ambiguity: "ambiguity", ocr: "deterministic", chat: "chatbot" };
+  var compMap = { fraud: "deterministic", ambiguity: "ambiguity", ocr: "deterministic", chat: "unified_expense_assistant" };
   var component = compMap[compKey] || "deterministic";
 
   try {
