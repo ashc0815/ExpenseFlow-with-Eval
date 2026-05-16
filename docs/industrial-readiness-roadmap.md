@@ -33,7 +33,7 @@ A portfolio demo and an industrial product differ by one question:
 
 > *Could you put this in front of a finance team at a 100-person company tomorrow and have them rely on it for next month's expense reimbursement?*
 
-For ExpenseFlow today, the honest answer is **no** — not because the AI is bad (it's actually good), but because the surrounding **operational + integration + compliance** layer doesn't exist. The 8 gaps below are what fills that layer.
+For ExpenseFlow today, the honest answer is **no** — not because the AI is bad (it's actually good), but because the surrounding **operational + integration + compliance** layer doesn't exist. The 9 gaps below are what fills that layer.
 
 This doc is sequenced so each gap has:
 1. **What it actually is** (vs. what people think it is)

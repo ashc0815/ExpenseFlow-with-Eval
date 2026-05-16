@@ -164,7 +164,7 @@ Plus a **customer segmentation** doc that picks which segment to target first (5
 4. [`docs/evals-reference.md`](docs/evals-reference.md) — eval discipline (Hamel framework adaptation)
 5. [`docs/agent-eval-dimensions.md`](docs/agent-eval-dimensions.md) — 8 eval dimensions a vertical AI agent should cover (privacy / FP-FN split / cross-model / multilingual / ...)
 6. [`docs/multi-entity-design.md`](docs/multi-entity-design.md) — what's deliberately deferred and why
-7. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — what production-grade requires (8 gaps)
+7. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — what production-grade requires (9 gaps)
 8. [`docs/customer-segmentation.md`](docs/customer-segmentation.md) — which segment to target first
 9. [`docs/integration-design.md`](docs/integration-design.md) — concrete NetSuite + Stripe + Excel-bridge designs
 10. [`docs/fapiaoforce-prd.md`](docs/fapiaoforce-prd.md) — Concur-style multi-group product spec for the China-enterprise vertical (the productization of Segment B)

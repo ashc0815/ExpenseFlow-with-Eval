@@ -163,7 +163,7 @@ Prompt injection 能让 LLM 输出任何字符串。但**没有任何字符串**
 4. [`docs/evals-reference.md`](docs/evals-reference.md) — Eval 方法论（Hamel 框架适配）
 5. [`docs/agent-eval-dimensions.md`](docs/agent-eval-dimensions.md) — Vertical AI agent 应该覆盖的 8 个 eval 维度（隐私 / FP-FN 拆分 / 跨模型 / 多语言 / ...）
 6. [`docs/multi-entity-design.md`](docs/multi-entity-design.md) — 故意延后了什么、为什么
-7. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — 工业级要求（8 个 gap）
+7. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — 工业级要求（9 个 gap）
 8. [`docs/customer-segmentation.md`](docs/customer-segmentation.md) — 应该先卖给谁
 9. [`docs/integration-design.md`](docs/integration-design.md) — NetSuite + Stripe + Excel-bridge 真 API 设计
 10. [`docs/fapiaoforce-prd.md`](docs/fapiaoforce-prd.md) — Concur-style 多集团产品 PRD（中国企业市场 Segment B 的产品化）
