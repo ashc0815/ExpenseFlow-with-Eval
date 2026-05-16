@@ -410,6 +410,13 @@ SUBAGENT_SKILLS: dict[str, list[str]] = {
     "draft-writer": ["receipt-completion-skill"],
 }
 
+EXTERNAL_EVIDENCE_TOOLS = {
+    "lookup_didi_trip",
+    "lookup_ctrip_booking",
+    "lookup_card_transaction",
+}
+MAX_EXTERNAL_EVIDENCE_TOOL_CALLS = 5
+
 
 def _subagent_for_tool(tool_name: str) -> str:
     return SUBAGENT_TOOL_MAP.get(tool_name, "receipt-analysis-orchestrator")
@@ -456,6 +463,49 @@ def _tool_output_summary(tool_name: str, result: Any) -> str:
     if tool_name == "update_draft_field":
         return f"{result.get('field')} updated" if result.get("ok") else "draft update failed"
     return "ok"
+
+
+def _external_evidence_clarification(attempts: list[dict]) -> str:
+    tools = {str(a.get("tool") or "") for a in attempts}
+    inputs: dict[str, Any] = {}
+    for attempt in attempts:
+        inp = attempt.get("input") or {}
+        if isinstance(inp, dict):
+            inputs.update({k: v for k, v in inp.items() if v not in (None, "")})
+
+    provider_bits = []
+    if "lookup_ctrip_booking" in tools:
+        provider_bits.append("携程/Trip.com")
+    if "lookup_didi_trip" in tools:
+        provider_bits.append("滴滴")
+    if "lookup_card_transaction" in tools:
+        provider_bits.append("信用卡/公司卡")
+    provider_text = "、".join(provider_bits) or "外部证据"
+
+    needed: list[str] = []
+    if "lookup_ctrip_booking" in tools and not inputs.get("booking_id"):
+        needed.append("订单号")
+    if "lookup_didi_trip" in tools and not (inputs.get("order_id") or inputs.get("trip_id")):
+        needed.append("行程/订单号")
+    if not inputs.get("date"):
+        needed.append("日期")
+    if inputs.get("amount") is None:
+        needed.append("金额")
+    if not (inputs.get("merchant_hint") or inputs.get("city")):
+        needed.append("城市、酒店/航班/路线或商户关键词")
+    if "lookup_ctrip_booking" in tools:
+        needed.append("是否取消、改签或退款")
+
+    seen = set()
+    needed = [item for item in needed if not (item in seen or seen.add(item))]
+    if not needed:
+        needed = ["订单号或更精确的商户/行程信息", "是否取消、改签或退款"]
+
+    return (
+        f"我已经尝试 {MAX_EXTERNAL_EVIDENCE_TOOL_CALLS} 次查询{provider_text}，"
+        "但仍没有拿到唯一可核验的记录。为了避免猜错，我先暂停自动补齐。"
+        f"请确认：{'、'.join(needed)}。你回复后，我会继续用这些信息查询。"
+    )
 
 
 def _subagent_event(
@@ -3026,6 +3076,7 @@ async def run_agent(
 
     yield {"type": "message_start"}
     subagent_trace_steps: list[dict] = []
+    evidence_attempts_this_turn: list[dict] = []
 
     async def _emit_trace_end(stop_reason: str) -> AsyncIterator[dict]:
         if subagent_trace_steps:
@@ -3134,6 +3185,12 @@ async def run_agent(
                     draft_changed = True
                     if result.get("field"):
                         written_fields.append(str(result["field"]))
+                if tc["name"] in EXTERNAL_EVIDENCE_TOOLS:
+                    evidence_attempts_this_turn.append({
+                        "tool": tc["name"],
+                        "input": tc["input"],
+                        "result": result,
+                    })
                 tool_results_content.append({
                     "type": "tool_result",
                     "tool_use_id": tc["id"],
@@ -3160,6 +3217,20 @@ async def run_agent(
             messages.append(tool_user_msg)
             if new_messages_to_persist is not None:
                 new_messages_to_persist.append(tool_user_msg)
+
+            if (
+                len(evidence_attempts_this_turn) >= MAX_EXTERNAL_EVIDENCE_TOOL_CALLS
+                and not draft_changed
+            ):
+                clarification = _external_evidence_clarification(evidence_attempts_this_turn)
+                assistant_msg = {"role": "assistant", "content": [{"type": "text", "text": clarification}]}
+                messages.append(assistant_msg)
+                if new_messages_to_persist is not None:
+                    new_messages_to_persist.append(assistant_msg)
+                yield {"type": "assistant_text", "text": clarification}
+                async for ev in _emit_trace_end("needs_user_clarification"):
+                    yield ev
+                break
             continue  # 下一轮 LLM
 
         # 未知 stop_reason
