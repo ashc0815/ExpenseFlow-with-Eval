@@ -130,3 +130,109 @@ def grade_case(actual_output: dict, expect: dict) -> list[tuple[str, bool, str]]
                 results.append((key, passed, msg))
 
     return results
+
+
+def event_tool_names(events: list[dict]) -> list[str]:
+    """Return tool_call names in the order they appeared."""
+    return [e.get("name", "") for e in events if e.get("type") == "tool_call"]
+
+
+def assistant_text(events: list[dict]) -> str:
+    """Concatenate streamed assistant text events for response graders."""
+    return " ".join(e.get("text", "") for e in events if e.get("type") == "assistant_text")
+
+
+def grade_must_call_tools(events: list[dict], required: list[str]) -> tuple[bool, str]:
+    """Binary check: every required tool was called at least once."""
+    names = event_tool_names(events)
+    missing = [name for name in required if name not in names]
+    passed = not missing
+    return passed, f"missing={missing}; called={names}"
+
+
+def grade_forbidden_tools_absent(events: list[dict], forbidden: list[str]) -> tuple[bool, str]:
+    """Binary check: forbidden tools never appeared."""
+    names = event_tool_names(events)
+    present = [name for name in forbidden if name in names]
+    passed = not present
+    return passed, f"present={present}; called={names}"
+
+
+def grade_response_contains(events: list[dict], required_phrases: list[str]) -> tuple[bool, str]:
+    """Binary check: final streamed answer contains all required phrases."""
+    text = assistant_text(events)
+    missing = [phrase for phrase in required_phrases if phrase not in text]
+    passed = not missing
+    return passed, f"missing={missing}; text={text[:240]!r}"
+
+
+def grade_response_excludes(events: list[dict], forbidden_phrases: list[str]) -> tuple[bool, str]:
+    """Binary check: final streamed answer contains none of the forbidden phrases."""
+    text = assistant_text(events)
+    present = [phrase for phrase in forbidden_phrases if phrase in text]
+    passed = not present
+    return passed, f"present={present}; text={text[:240]!r}"
+
+
+def grade_final_fields(draft_fields: dict, expected_fields: dict) -> tuple[bool, str]:
+    """Binary check: final draft fields match expected values.
+
+    Numeric fields tolerate string/float representation differences.
+    String fields use exact match unless expected value is a substring marker
+    handled by the caller.
+    """
+    mismatches = []
+    for field, expected in (expected_fields or {}).items():
+        actual = draft_fields.get(field)
+        if isinstance(expected, (int, float)):
+            try:
+                ok = abs(float(actual) - float(expected)) < 0.0001
+            except (TypeError, ValueError):
+                ok = False
+        else:
+            ok = actual == expected
+        if not ok:
+            mismatches.append({"field": field, "actual": actual, "expected": expected})
+    passed = not mismatches
+    return passed, f"mismatches={mismatches}"
+
+
+def grade_fields_absent(draft_fields: dict, absent_fields: list[str]) -> tuple[bool, str]:
+    """Binary check: fields that should not be written are absent."""
+    present = [field for field in absent_fields if field in (draft_fields or {})]
+    passed = not present
+    return passed, f"present={present}; fields={draft_fields}"
+
+
+def grade_field_sources_include(field_sources: dict, expected_sources: dict) -> tuple[bool, str]:
+    """Binary check: selected fields carry expected provenance/source strings."""
+    mismatches = []
+    for field, expected in (expected_sources or {}).items():
+        actual = (field_sources or {}).get(field)
+        if expected not in str(actual):
+            mismatches.append({"field": field, "actual": actual, "expected_contains": expected})
+    passed = not mismatches
+    return passed, f"mismatches={mismatches}"
+
+
+def grade_tool_args(events: list[dict], expected_args: dict[str, dict]) -> tuple[bool, str]:
+    """Binary check: at least one call per named tool contains expected args.
+
+    The expected dict is partial: only listed keys are checked.
+    """
+    mismatches = []
+    for tool_name, expected in (expected_args or {}).items():
+        calls = [
+            e.get("input") or {}
+            for e in events
+            if e.get("type") == "tool_call" and e.get("name") == tool_name
+        ]
+        matched = False
+        for call in calls:
+            if all(call.get(k) == v for k, v in expected.items()):
+                matched = True
+                break
+        if not matched:
+            mismatches.append({"tool": tool_name, "expected_subset": expected, "calls": calls})
+    passed = not mismatches
+    return passed, f"mismatches={mismatches}"

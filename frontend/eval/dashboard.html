@@ -255,6 +255,46 @@
       border: 1px solid var(--gray-200); background: var(--gray-0);
       color: var(--gray-900); font-size: .78rem;
     }
+
+    /* ── Run Eval modal ─────────────────────────── */
+    .eval-modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, .35);
+      display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .eval-modal {
+      width: min(720px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem);
+      overflow-y: auto; background: var(--gray-0); border-radius: 8px;
+      border: 1px solid var(--gray-200); box-shadow: var(--shadow);
+      padding: 1.2rem;
+    }
+    .eval-model-select { position: relative; margin-top: .6rem; }
+    .eval-model-select-btn {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      gap: .7rem; padding: .65rem .75rem; border: 1px solid var(--gray-200);
+      border-radius: 8px; background: var(--gray-0); color: var(--gray-800);
+      font-size: .82rem; cursor: pointer; text-align: left;
+    }
+    .eval-model-select-btn:hover { border-color: var(--brand); }
+    .eval-model-select-btn .placeholder { color: var(--gray-500); }
+    .eval-model-select-menu {
+      display: none; position: absolute; left: 0; right: 0; top: calc(100% + .35rem);
+      border: 1px solid var(--gray-200); border-radius: 8px; background: var(--gray-0);
+      box-shadow: var(--shadow); overflow: hidden; z-index: 1001;
+    }
+    .eval-model-select.open .eval-model-select-menu { display: block; }
+    .eval-choice {
+      display: flex; align-items: center; justify-content: space-between; gap: .7rem;
+      padding: .65rem .75rem; border-bottom: 1px solid var(--gray-200);
+      font-size: .82rem; color: var(--gray-800); background: var(--gray-0);
+    }
+    .eval-choice:last-child { border-bottom: none; }
+    .eval-choice:hover { background: var(--gray-50); }
+    .eval-choice.disabled { color: var(--gray-400); background: var(--gray-50); cursor: not-allowed; }
+    .eval-choice.disabled input { cursor: not-allowed; }
+    .eval-choice-name { font-weight: 600; }
+    .eval-choice input { margin: 0; }
+    .eval-model-count { margin-top: .4rem; font-size: .72rem; color: var(--gray-500); }
+    .eval-modal-actions { display:flex; justify-content:flex-end; gap:.6rem; margin-top:1.1rem; }
   </style>
 </head>
 <body>
@@ -265,6 +305,42 @@
   <span class="brand">ExpenseFlow</span>
   <span class="sep">/</span>
   <span class="sub">Eval Observatory</span>
+</div>
+
+<div id="run-eval-modal" class="eval-modal-backdrop">
+  <div class="eval-modal">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem;">
+      <div>
+        <h2 id="run-eval-title" style="margin:0; font-size:1rem; color:var(--gray-900)">Run Eval</h2>
+        <div id="run-eval-subtitle" style="font-size:.78rem; color:var(--gray-500); margin-top:.2rem"></div>
+      </div>
+      <button class="btn-save btn-secondary" onclick="closeRunEvalModal()">Close</button>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <div style="font-weight:700; font-size:.85rem; color:var(--gray-800)">1. LLM</div>
+      <div class="eval-model-select" id="run-eval-model-select">
+        <button type="button" class="eval-model-select-btn" onclick="toggleModelDropdown()">
+          <span id="run-eval-model-label" class="placeholder">Choose LLMs</span>
+          <span>&#9662;</span>
+        </button>
+        <div class="eval-model-select-menu" id="run-eval-models"></div>
+      </div>
+      <div class="eval-model-count" id="run-eval-model-count">Selected 1 / 2</div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <div style="font-weight:700; font-size:.85rem; color:var(--gray-800)">2. Datasets</div>
+      <div class="empty-state" style="padding:1rem; margin-top:.5rem; border:1px dashed var(--gray-200); border-radius:8px;">
+        Dataset picker is reserved for the next iteration. Current run uses the default chatbot eval suite.
+      </div>
+    </div>
+
+    <div class="eval-modal-actions">
+      <button class="btn-save btn-secondary" onclick="closeRunEvalModal()">Cancel</button>
+      <button class="btn-save btn-primary" onclick="startConfiguredEval()">Run Selected Eval</button>
+    </div>
+  </div>
 </div>
 
 <div class="eval-shell">
@@ -403,6 +479,10 @@
         </div>
       </div>
       <div class="comp-section">
+        <div class="comp-section-title">Chatbot Expense Assistant Model Matrix</div>
+        <div id="chatbot-model-matrix"><div class="empty-state">Loading...</div></div>
+      </div>
+      <div class="comp-section">
         <div class="comp-section-title">Per-Component Detection Quality (Latest Run)</div>
         <div id="overview-metrics-table"><div class="empty-state">Loading...</div></div>
       </div>
@@ -425,7 +505,11 @@
     <div id="tab-compare" style="display:none">
       <div class="eval-main-header">
         <h1>Compare Runs</h1>
-        <div class="subtitle">Compare metadata, P/R/F1, and case results between two eval runs</div>
+        <div class="subtitle">Compare metadata, P/R/F1, case results, and LLM model-matrix runs</div>
+      </div>
+      <div class="comp-section">
+        <div class="comp-section-title">Latest LLM Comparison</div>
+        <div id="compare-llm-matrix"><div class="empty-state">Loading...</div></div>
       </div>
       <div class="compare-bar">
         <strong>Run A:</strong>
@@ -524,6 +608,17 @@ let allRuns = [];
 let latestRun = null;
 let currentPromptKey = null;
 let currentPromptVersion = null;
+let pendingRunEvalCompKey = null;
+
+const RUN_EVAL_MODELS = [
+  "OpenAI-4o-mini",
+  "Deepseek V4",
+  "Qwen3-Max",
+  "GLM-4.6",
+  "Kimi K2.5",
+  "Doubao Vision Pro (OCR)",
+  "Qwen3-VL-Max (OCR)",
+];
 
 /* ── Component Definitions ───────────────────── */
 const COMP_DEFS = {
@@ -674,6 +769,74 @@ async function loadOverview() {
     document.getElementById("kpi-rejection-count").textContent =
       "T4: " + (f.rejection_count || 0);
   } catch (e) { console.error("auto-approval-rate:", e); }
+
+  try {
+    var mr = await fetch(API + "/api/eval/chatbot/model-matrix");
+    var matrix = await mr.json();
+    renderChatbotModelMatrix(matrix, "chatbot-model-matrix");
+  } catch (e) {
+    console.error("chatbot-model-matrix:", e);
+    document.getElementById("chatbot-model-matrix").innerHTML =
+      '<div class="empty-state">Failed to load chatbot model matrix.</div>';
+  }
+}
+
+function renderChatbotModelMatrix(data, targetId) {
+  var target = document.getElementById(targetId || "chatbot-model-matrix");
+  if (!target) return;
+  if (!data || data.empty) {
+    target.innerHTML = '<div class="empty-state">'
+      + esc((data && data.message) || "No chatbot model-matrix run yet.")
+      + '<br><code style="font-size:.75rem">pytest backend/tests/test_chatbot_eval.py -q</code>'
+      + "</div>";
+    return;
+  }
+
+  var byModel = data.by_model || {};
+  var modelRows = Object.keys(byModel).map(function(model) {
+    var m = byModel[model] || {};
+    var passRate = m.pass_rate != null ? (m.pass_rate * 100).toFixed(0) + "%" : "--";
+    var passColor = m.pass_rate >= 0.8 ? "#16a34a" : m.pass_rate >= 0.5 ? "#d97706" : "#dc2626";
+    return "<tr>"
+      + '<td><span class="badge badge-component">' + esc(model) + "</span></td>"
+      + "<td>" + (m.passed_cases || 0) + " / " + (m.total_cases || 0) + "</td>"
+      + '<td style="color:' + passColor + '; font-weight:700">' + passRate + "</td>"
+      + "<td>" + Number(m.avg_tool_calls || 0).toFixed(2) + "</td>"
+      + "<td>" + Number(m.avg_latency_ms || 0).toFixed(0) + " ms</td>"
+      + "<td>$" + Number(m.total_cost_estimate_usd || 0).toFixed(6) + "</td>"
+      + "</tr>";
+  }).join("");
+
+  var bySuite = data.by_suite || {};
+  var suiteRows = Object.keys(bySuite).map(function(suite) {
+    var s = bySuite[suite] || {};
+    var passRate = s.pass_rate != null ? (s.pass_rate * 100).toFixed(0) + "%" : "--";
+    return "<tr>"
+      + "<td>" + esc(suite) + "</td>"
+      + "<td>" + (s.passed_cases || 0) + " / " + (s.total_cases || 0) + "</td>"
+      + "<td>" + passRate + "</td>"
+      + "<td>" + Number(s.avg_tool_calls || 0).toFixed(2) + "</td>"
+      + "<td>" + Number(s.avg_latency_ms || 0).toFixed(0) + " ms</td>"
+      + "<td>$" + Number(s.total_cost_estimate_usd || 0).toFixed(6) + "</td>"
+      + "</tr>";
+  }).join("");
+
+  target.innerHTML =
+    '<div class="meta-pills">'
+    + '<span class="meta-pill"><span class="pill-key">Dataset:</span> ' + esc(data.dataset || "") + "</span>"
+    + '<span class="meta-pill"><span class="pill-key">Run target:</span> ' + esc(data.run_target || "chatbot") + "</span>"
+    + '<span class="meta-pill"><span class="pill-key">Cases:</span> ' + esc(String(data.total_cases || 0)) + "</span>"
+    + '<span class="meta-pill"><span class="pill-key">Datasets:</span> ' + esc((data.requested_datasets || []).join(", ") || "default chatbot suite") + "</span>"
+    + '<span class="meta-pill"><span class="pill-key">Finished:</span> ' + esc(fmtTime(data.finished_at)) + "</span>"
+    + "</div>"
+    + '<div style="font-weight:700; font-size:.82rem; margin:.7rem 0 .35rem; color:var(--gray-700)">By Model</div>'
+    + '<table class="eval-table">'
+    + "<thead><tr><th>Model</th><th>Passed</th><th>Pass Rate</th><th>Avg Tools</th><th>Avg Latency</th><th>Est. Cost</th></tr></thead>"
+    + "<tbody>" + (modelRows || '<tr><td colspan="6" class="empty-state">No model rows.</td></tr>') + "</tbody></table>"
+    + '<div style="font-weight:700; font-size:.82rem; margin:1rem 0 .35rem; color:var(--gray-700)">By Suite</div>'
+    + '<table class="eval-table">'
+    + "<thead><tr><th>Suite</th><th>Passed</th><th>Pass Rate</th><th>Avg Tools</th><th>Avg Latency</th><th>Est. Cost</th></tr></thead>"
+    + "<tbody>" + (suiteRows || '<tr><td colspan="6" class="empty-state">No suite rows.</td></tr>') + "</tbody></table>";
 }
 
 function renderOverviewMetrics(run) {
@@ -1861,6 +2024,7 @@ async function showTrace(id) {
 
 /* ── Compare Runs ────────────────────────────── */
 async function loadCompareSelectors() {
+  loadCompareLlmMatrix();
   if (allRuns.length === 0) {
     try {
       var r = await fetch(API + "/api/eval/runs?page=1&page_size=50");
@@ -1870,7 +2034,8 @@ async function loadCompareSelectors() {
   }
   var opts = allRuns.map(function(run) {
     var m = run.metadata || {};
-    var label = fmtTime(run.started_at) + " | " + (run.pass_rate * 100).toFixed(0) + "% | " + (m.prompt_version || "?") + " | " + (m.model || "?");
+    var runWhat = (run.trigger || "manual") + " · " + (m.model || "?") + " · " + (run.total_cases || 0) + " cases";
+    var label = fmtTime(run.started_at) + " | " + (run.pass_rate * 100).toFixed(0) + "% | " + runWhat;
     return '<option value="' + run.id + '">' + label + "</option>";
   }).join("");
   document.getElementById("compare-a").innerHTML = opts;
@@ -1878,6 +2043,18 @@ async function loadCompareSelectors() {
   if (allRuns.length >= 2) {
     document.getElementById("compare-a").selectedIndex = 1;
     document.getElementById("compare-b").selectedIndex = 0;
+  }
+}
+
+async function loadCompareLlmMatrix() {
+  try {
+    var r = await fetch(API + "/api/eval/chatbot/model-matrix");
+    var data = await r.json();
+    renderChatbotModelMatrix(data, "compare-llm-matrix");
+  } catch (e) {
+    console.error("loadCompareLlmMatrix:", e);
+    var target = document.getElementById("compare-llm-matrix");
+    if (target) target.innerHTML = '<div class="empty-state">Failed to load LLM comparison.</div>';
   }
 }
 
@@ -1980,6 +2157,78 @@ async function runDiff() {
 
 /* ── Run Eval Trigger ─────────────────────────── */
 async function triggerEval(compKey) {
+  openRunEvalModal(compKey);
+}
+
+function openRunEvalModal(compKey) {
+  pendingRunEvalCompKey = compKey;
+  var def = COMP_DEFS[compKey] || {name: compKey};
+  document.getElementById("run-eval-title").textContent = "Run Eval: " + def.name;
+  document.getElementById("run-eval-subtitle").textContent =
+    "Choose up to 2 LLMs. The dataset picker is intentionally empty for now.";
+  var target = document.getElementById("run-eval-models");
+  target.innerHTML = RUN_EVAL_MODELS.map(function(model, idx) {
+    var checked = idx === 0 ? " checked" : "";
+    return '<label class="eval-choice">'
+      + '<span class="eval-choice-name">' + esc(model) + "</span>"
+      + '<input type="checkbox" value="' + esc(model) + '"' + checked + ' onchange="enforceModelLimit()">'
+      + "</label>";
+  }).join("");
+  enforceModelLimit();
+  document.getElementById("run-eval-model-select").classList.remove("open");
+  document.getElementById("run-eval-modal").style.display = "flex";
+}
+
+function closeRunEvalModal() {
+  document.getElementById("run-eval-modal").style.display = "none";
+}
+
+function toggleModelDropdown() {
+  document.getElementById("run-eval-model-select").classList.toggle("open");
+}
+
+function enforceModelLimit() {
+  var inputs = Array.prototype.slice.call(document.querySelectorAll("#run-eval-models input"));
+  var selected = inputs.filter(function(input) { return input.checked; });
+  if (selected.length > 2) {
+    var newest = selected[selected.length - 1];
+    newest.checked = false;
+    selected = inputs.filter(function(input) { return input.checked; });
+  }
+  inputs.forEach(function(input) {
+    var label = input.closest("label");
+    var shouldDisable = selected.length >= 2 && !input.checked;
+    input.disabled = shouldDisable;
+    if (label) label.classList.toggle("disabled", shouldDisable);
+  });
+  var counter = document.getElementById("run-eval-model-count");
+  if (counter) {
+    counter.textContent = "Selected " + selected.length + " / 2";
+    counter.style.color = selected.length === 2 ? "#16a34a" : "var(--gray-500)";
+  }
+  var label = document.getElementById("run-eval-model-label");
+  if (label) {
+    var names = selected.map(function(input) { return input.value; });
+    label.textContent = names.length ? names.join(", ") : "Choose LLMs";
+    label.classList.toggle("placeholder", names.length === 0);
+  }
+}
+
+async function startConfiguredEval() {
+  var compKey = pendingRunEvalCompKey || "chat";
+  var selectedModels = Array.prototype.slice.call(
+    document.querySelectorAll("#run-eval-models input:checked")
+  ).map(function(input) { return input.value; });
+  if (selectedModels.length === 0) {
+    alert("Please choose at least one LLM.");
+    return;
+  }
+  if (selectedModels.length > 2) {
+    alert("Please choose at most two LLMs.");
+    return;
+  }
+  closeRunEvalModal();
+
   var btn = document.getElementById("run-eval-btn-" + compKey);
   var status = document.getElementById("eval-status-" + compKey);
   btn.disabled = true;
@@ -1987,14 +2236,18 @@ async function triggerEval(compKey) {
   status.textContent = "";
 
   // Map compKey to backend component name
-  var compMap = { fraud: "deterministic", ambiguity: "ambiguity", ocr: "deterministic", chat: "all" };
+  var compMap = { fraud: "deterministic", ambiguity: "ambiguity", ocr: "deterministic", chat: "chatbot" };
   var component = compMap[compKey] || "deterministic";
 
   try {
     var r = await fetch(API + "/api/eval/trigger", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({component: component}),
+      body: JSON.stringify({
+        component: component,
+        models: selectedModels,
+        datasets: [],
+      }),
     });
     var data = await r.json();
     if (data.status === "already_running") {
@@ -2003,7 +2256,7 @@ async function triggerEval(compKey) {
       btn.disabled = false;
       return;
     }
-    status.textContent = "Eval started, waiting for results...";
+    status.textContent = "Eval started: " + component + " | " + selectedModels.join(", ");
     // Poll for completion
     pollEvalStatus(compKey);
   } catch (e) {
@@ -2028,6 +2281,13 @@ async function pollEvalStatus(compKey) {
         // Reload latest run data and refresh cases
         latestRun = null;
         await loadComponentCases(compKey);
+        if (compKey === "chat") {
+          await loadCompareLlmMatrix();
+          try {
+            var mr = await fetch(API + "/api/eval/chatbot/model-matrix");
+            renderChatbotModelMatrix(await mr.json(), "chatbot-model-matrix");
+          } catch (e) {}
+        }
         // Also reload overview if we go back
         allRuns = [];
         status.textContent = "Completed at " + new Date().toLocaleTimeString("zh-CN", {hour: "2-digit", minute: "2-digit", second: "2-digit"});
@@ -2047,6 +2307,10 @@ function esc(s) { return s ? s.replace(/&/g, "&amp;").replace(/</g, "&lt;").repl
 
 /* ── Init ─────────────────────────────────────── */
 loadOverview();
+document.addEventListener("click", function(ev) {
+  var box = document.getElementById("run-eval-model-select");
+  if (box && !box.contains(ev.target)) box.classList.remove("open");
+});
 </script>
 </body>
 </html>

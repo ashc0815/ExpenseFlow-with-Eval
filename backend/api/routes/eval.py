@@ -57,6 +57,7 @@ _CONFIG_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_config.json
 _PROMPTS_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_prompts.json"
 _HUMAN_FRAUD_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_human_fraud_latest.json"
 _HUMAN_AMBIG_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_human_ambiguity_latest.json"
+_CHATBOT_MATRIX_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_chatbot_model_matrix_latest.json"
 
 # B1 (judge agreement) snapshot paths — written by test_judge_agreement.py.
 # Map a logical "component" name (the same value the saturation endpoint
@@ -395,7 +396,9 @@ async def trigger_eval(body: dict = {}) -> dict:
     """Trigger an eval run via pytest subprocess.
 
     Body (optional):
-      component: "fraud" | "ambiguity" | "deterministic" | "all"
+      component: "fraud" | "ambiguity" | "deterministic" | "chatbot" | "all"
+      models: ["OpenAI-4o-mini", ...]      # chatbot model-matrix runner
+      datasets: []                         # reserved for future dataset filters
 
     Returns immediately with status; results appear in /runs after completion.
     """
@@ -404,32 +407,62 @@ async def trigger_eval(body: dict = {}) -> dict:
         return {"status": "already_running"}
 
     component = body.get("component", "deterministic")
-    # Map component to pytest -k filter
-    k_filter = {
-        "fraud": "deterministic or layer or classifier",
-        "fraud_llm": "llm",
-        "ambiguity": "ambiguity",
-        "deterministic": "deterministic or layer or classifier",
-        "all": "",
-    }.get(component, "deterministic or layer or classifier")
-
-    cmd = [
-        sys.executable, "-m", "pytest",
-        "backend/tests/test_eval_harness.py",
-        "-q", "--tb=short",
+    requested_models = [
+        str(m).strip()
+        for m in (body.get("models") or [])
+        if str(m).strip()
     ]
-    if k_filter:
-        cmd += ["-k", k_filter]
+    requested_datasets = [
+        str(d).strip()
+        for d in (body.get("datasets") or [])
+        if str(d).strip()
+    ]
+
+    if component in ("chat", "chatbot"):
+        cmd = [
+            sys.executable, "-m", "pytest",
+            "backend/tests/test_chatbot_eval.py",
+            "-q", "--tb=short",
+        ]
+        k_filter = ""
+    else:
+        # Map component to pytest -k filter
+        k_filter = {
+            "fraud": "deterministic or layer or classifier",
+            "fraud_llm": "llm",
+            "ambiguity": "ambiguity",
+            "deterministic": "deterministic or layer or classifier",
+            "all": "",
+        }.get(component, "deterministic or layer or classifier")
+
+        cmd = [
+            sys.executable, "-m", "pytest",
+            "backend/tests/test_eval_harness.py",
+            "-q", "--tb=short",
+        ]
+        if k_filter:
+            cmd += ["-k", k_filter]
 
     _eval_running = True
 
     async def _run():
         global _eval_running
         try:
+            env = {
+                **__import__("os").environ,
+                "PYTHONPATH": str(_PROJECT_ROOT),
+                "EVAL_TRIGGER_COMPONENT": str(component),
+                "EVAL_TRIGGER_MODELS": ",".join(requested_models),
+                "EVAL_TRIGGER_DATASETS": ",".join(requested_datasets),
+            }
+            if requested_models and component in ("chat", "chatbot"):
+                env["CHATBOT_EVAL_MODELS"] = ",".join(requested_models)
+            if requested_datasets and component in ("chat", "chatbot"):
+                env["CHATBOT_EVAL_DATASETS"] = ",".join(requested_datasets)
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 cwd=str(_PROJECT_ROOT),
-                env={**__import__("os").environ, "PYTHONPATH": str(_PROJECT_ROOT)},
+                env=env,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -444,7 +477,13 @@ async def trigger_eval(body: dict = {}) -> dict:
 
     # Run in background — results post to /runs via harness teardown
     asyncio.create_task(_run())
-    return {"status": "started", "component": component, "k_filter": k_filter}
+    return {
+        "status": "started",
+        "component": component,
+        "k_filter": k_filter,
+        "models": requested_models,
+        "datasets": requested_datasets,
+    }
 
 
 @router.get("/trigger/status")
@@ -644,6 +683,26 @@ async def get_human_ambiguity_eval() -> dict:
         return {"empty": True, "message": "No ambiguity human-eval run yet. Run: pytest backend/tests/test_human_eval.py"}
     try:
         return json.loads(_HUMAN_AMBIG_PATH.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return {"empty": True, "error": str(exc)}
+
+
+@router.get("/chatbot/model-matrix")
+async def get_chatbot_model_matrix() -> dict:
+    """Return the latest chatbot expense-assistant model matrix snapshot.
+
+    File is written by pytest backend/tests/test_chatbot_eval.py.
+    """
+    if not _CHATBOT_MATRIX_PATH.exists():
+        return {
+            "empty": True,
+            "message": (
+                "No chatbot model-matrix run yet. Run: "
+                "pytest backend/tests/test_chatbot_eval.py -q"
+            ),
+        }
+    try:
+        return json.loads(_CHATBOT_MATRIX_PATH.read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001
         return {"empty": True, "error": str(exc)}
 

@@ -221,6 +221,46 @@ _TOOL_DEFS: dict[str, dict] = {
             "required": [],
         },
     },
+    "lookup_ctrip_booking": {
+        "name": "lookup_ctrip_booking",
+        "description": "只读查询携程/Trip.com 机票或酒店订单，用于发票缺失、发票模糊或字段不全时补齐商户、日期、金额、行程/入住信息。证据不足时返回候选项，不写草稿。",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date": {"type": "string", "description": "用户提供或 OCR 识别的交易/行程日期，YYYY-MM-DD，可选"},
+                "amount": {"type": "number", "description": "用户提供或 OCR/信用卡识别的金额，可选"},
+                "booking_type": {"type": "string", "enum": ["flight", "hotel", "unknown"], "description": "订单类型，可选"},
+                "merchant_hint": {"type": "string", "description": "商户、航司、酒店或城市关键词，可选"},
+            },
+            "required": [],
+        },
+    },
+    "lookup_didi_trip": {
+        "name": "lookup_didi_trip",
+        "description": "只读查询滴滴打车行程，用于打车发票丢失、模糊或字段不全时补齐金额、日期、上下车地点和商户。证据不足时返回候选项，不写草稿。",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date": {"type": "string", "description": "行程或扣款日期，YYYY-MM-DD，可选"},
+                "amount": {"type": "number", "description": "打车金额，可选"},
+                "city": {"type": "string", "description": "城市或地点关键词，可选"},
+            },
+            "required": [],
+        },
+    },
+    "lookup_card_transaction": {
+        "name": "lookup_card_transaction",
+        "description": "只读查询公司卡/信用卡交易，用于与 OCR、携程、滴滴等来源交叉校验金额、日期和商户。证据不足时返回候选项，不写草稿。",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "date": {"type": "string", "description": "扣款日期，YYYY-MM-DD，可选"},
+                "amount": {"type": "number", "description": "扣款金额，可选"},
+                "merchant_hint": {"type": "string", "description": "商户关键词，可选"},
+            },
+            "required": [],
+        },
+    },
     "get_pending_approval_queue": {
         "name": "get_pending_approval_queue",
         "description": "（仅经理/财务可用）获取当前角色的待审报销单队列。manager 角色返回 status=pending 的报销单；finance_admin 返回 status=manager_approved 的。每条带：employee、行数、合计金额、最高风险分、最差 tier、提交后等待天数。",
@@ -258,6 +298,9 @@ TOOL_REGISTRY: dict[str, list[str]] = {
         "suggest_category",
         "check_duplicate_invoice",
         "get_my_recent_submissions",
+        "lookup_ctrip_booking",
+        "lookup_didi_trip",
+        "lookup_card_transaction",
         "update_draft_field",
         "check_budget_status",
     ],
@@ -708,6 +751,10 @@ async def tool_get_spend_summary(
         "period_label": label,
         "start_date": start_iso,
         "total_home": round(total_home, 2),
+        # Backward-compatible aliases for older tests/clients that predate
+        # home-currency support.
+        "total": round(total_home, 2),
+        "total_cny": round(total_home, 2) if home_cur == "CNY" else None,
         "home_currency": home_cur,
         "count": len(in_range),
         "items": items_detail,
@@ -933,6 +980,148 @@ async def tool_get_policy_rules(
     }
 
 
+def _matches_lookup(candidate: dict, args: dict) -> bool:
+    """Loose deterministic matcher for mock external lookup tools."""
+    date_arg = args.get("date")
+    if date_arg and candidate.get("date") != date_arg:
+        return False
+    amount_arg = args.get("amount")
+    if amount_arg is not None:
+        try:
+            if abs(float(candidate.get("amount", 0)) - float(amount_arg)) > 1.0:
+                return False
+        except (TypeError, ValueError):
+            return False
+    hint = str(args.get("merchant_hint") or args.get("city") or "").lower()
+    if hint:
+        haystack = " ".join(str(v) for v in candidate.values()).lower()
+        if hint not in haystack:
+            return False
+    booking_type = args.get("booking_type")
+    if booking_type and booking_type != "unknown" and candidate.get("booking_type") != booking_type:
+        return False
+    return True
+
+
+async def tool_lookup_ctrip_booking(
+    args: dict, ctx: UserContext, db: AsyncSession, draft_id: str
+) -> dict:
+    """Mockable read-only Trip.com/Ctrip booking lookup.
+
+    The production integration can replace this handler. For now it provides a
+    deterministic local fixture so evals can verify tool selection, argument
+    quality, and field completion behavior without calling external services.
+    """
+    candidates = [
+        {
+            "booking_id": "ctrip-flight-001",
+            "booking_type": "flight",
+            "date": "2026-05-08",
+            "merchant": "携程旅行",
+            "vendor": "中国东方航空",
+            "amount": 1280.0,
+            "currency": "CNY",
+            "route": "上海虹桥 -> 深圳宝安",
+            "invoice_available": False,
+        },
+        {
+            "booking_id": "ctrip-hotel-001",
+            "booking_type": "hotel",
+            "date": "2026-05-09",
+            "merchant": "携程旅行",
+            "vendor": "深圳南山商务酒店",
+            "amount": 680.0,
+            "currency": "CNY",
+            "city": "深圳",
+            "nights": 1,
+            "invoice_available": True,
+        },
+    ]
+    matches = [c for c in candidates if _matches_lookup(c, args)]
+    return {
+        "source": "ctrip_mock",
+        "query": args,
+        "candidates": matches,
+        "confidence": 0.95 if len(matches) == 1 else (0.55 if matches else 0.0),
+    }
+
+
+async def tool_lookup_didi_trip(
+    args: dict, ctx: UserContext, db: AsyncSession, draft_id: str
+) -> dict:
+    """Mockable read-only Didi trip lookup."""
+    candidates = [
+        {
+            "trip_id": "didi-001",
+            "date": "2026-05-08",
+            "merchant": "滴滴出行",
+            "amount": 86.0,
+            "currency": "CNY",
+            "city": "上海",
+            "from": "公司",
+            "to": "虹桥机场",
+            "invoice_available": False,
+        },
+        {
+            "trip_id": "didi-002",
+            "date": "2026-05-10",
+            "merchant": "滴滴出行",
+            "amount": 54.0,
+            "currency": "CNY",
+            "city": "深圳",
+            "from": "深圳宝安机场",
+            "to": "南山商务酒店",
+            "invoice_available": True,
+        },
+    ]
+    matches = [c for c in candidates if _matches_lookup(c, args)]
+    return {
+        "source": "didi_mock",
+        "query": args,
+        "candidates": matches,
+        "confidence": 0.95 if len(matches) == 1 else (0.55 if matches else 0.0),
+    }
+
+
+async def tool_lookup_card_transaction(
+    args: dict, ctx: UserContext, db: AsyncSession, draft_id: str
+) -> dict:
+    """Mockable read-only corporate card transaction lookup."""
+    candidates = [
+        {
+            "transaction_id": "card-001",
+            "date": "2026-05-08",
+            "merchant": "DIDI CHUXING",
+            "amount": 86.0,
+            "currency": "CNY",
+            "card_last4": "1888",
+        },
+        {
+            "transaction_id": "card-002",
+            "date": "2026-05-08",
+            "merchant": "CTRIP.COM",
+            "amount": 1280.0,
+            "currency": "CNY",
+            "card_last4": "1888",
+        },
+        {
+            "transaction_id": "card-003",
+            "date": "2026-05-09",
+            "merchant": "SHENZHEN HOTEL",
+            "amount": 680.0,
+            "currency": "CNY",
+            "card_last4": "1888",
+        },
+    ]
+    matches = [c for c in candidates if _matches_lookup(c, args)]
+    return {
+        "source": "card_mock",
+        "query": args,
+        "candidates": matches,
+        "confidence": 0.95 if len(matches) == 1 else (0.55 if matches else 0.0),
+    }
+
+
 async def tool_get_pending_approval_queue(
     args: dict, ctx: UserContext, db: AsyncSession, draft_id: str
 ) -> dict:
@@ -1123,6 +1312,9 @@ TOOL_HANDLERS = {
     "check_budget_status":               tool_check_budget_status,
     "get_budget_summary":                tool_get_budget_summary,
     "get_policy_rules":                  tool_get_policy_rules,
+    "lookup_ctrip_booking":              tool_lookup_ctrip_booking,
+    "lookup_didi_trip":                  tool_lookup_didi_trip,
+    "lookup_card_transaction":           tool_lookup_card_transaction,
     "get_pending_approval_queue":        tool_get_pending_approval_queue,
     "get_team_spend_summary":            tool_get_team_spend_summary,
 }
