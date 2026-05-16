@@ -162,11 +162,12 @@ Plus a **customer segmentation** doc that picks which segment to target first (5
 2. This README's [Design Decisions](#design-decisions) section — taxonomy and principles
 3. [`docs/hybrid-fraud-architecture.md`](docs/hybrid-fraud-architecture.md) — the Layer 1 + Layer 2 design story (10-min read)
 4. [`docs/evals-reference.md`](docs/evals-reference.md) — eval discipline (Hamel framework adaptation)
-5. [`docs/multi-entity-design.md`](docs/multi-entity-design.md) — what's deliberately deferred and why
-6. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — what production-grade requires (8 gaps)
-7. [`docs/customer-segmentation.md`](docs/customer-segmentation.md) — which segment to target first
-8. [`docs/integration-design.md`](docs/integration-design.md) — concrete NetSuite + Stripe + Excel-bridge designs
-9. [`docs/fapiaoforce-prd.md`](docs/fapiaoforce-prd.md) — Concur-style multi-group product spec for the China-enterprise vertical (the productization of Segment B)
+5. [`docs/agent-eval-dimensions.md`](docs/agent-eval-dimensions.md) — 8 eval dimensions a vertical AI agent should cover (privacy / FP-FN split / cross-model / multilingual / ...)
+6. [`docs/multi-entity-design.md`](docs/multi-entity-design.md) — what's deliberately deferred and why
+7. [`docs/industrial-readiness-roadmap.md`](docs/industrial-readiness-roadmap.md) — what production-grade requires (8 gaps)
+8. [`docs/customer-segmentation.md`](docs/customer-segmentation.md) — which segment to target first
+9. [`docs/integration-design.md`](docs/integration-design.md) — concrete NetSuite + Stripe + Excel-bridge designs
+10. [`docs/fapiaoforce-prd.md`](docs/fapiaoforce-prd.md) — Concur-style multi-group product spec for the China-enterprise vertical (the productization of Segment B)
 
 ---
 
