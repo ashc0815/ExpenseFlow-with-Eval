@@ -42,6 +42,10 @@ lookup_didi_trip
 update_draft_field
 ```
 
+For the subagent ownership, tool-call routing, failure-mode matrix, trace
+assertions, and eval manifest shape, see
+[`expense-assistant-subagent-tool-calls.md`](expense-assistant-subagent-tool-calls.md).
+
 The examples below focus on the Ctrip + card path:
 
 ```text
