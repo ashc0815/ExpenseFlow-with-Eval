@@ -68,13 +68,30 @@ finance-agent guidance:
 ## Canonical Subagents
 
 The current code already emits subagent names in tool events. Keep these names
-as the canonical eval surface.
+as the canonical eval surface. The canonical subagent specs live in:
+
+```text
+docs/subagents/receipt-reader.md
+docs/subagents/evidence-reconciler.md
+docs/subagents/draft-writer.md
+```
+
+Each spec follows the same frontmatter shape:
+
+```yaml
+---
+name: receipt-reader
+description: Use this subagent to ...
+tools:
+  - extract_receipt_fields
+---
+```
 
 | Subagent | Conceptual role | Can read external evidence? | Can write draft? |
 |---|---|---:|---:|
-| `receipt-reader` | OCR and claim extraction | No | No |
-| `evidence-reconciler` | Ctrip/Didi/card lookup and cross-check | Yes | No |
-| `draft-writer` | Safe draft update or clarification | No | Yes, gated |
+| [`receipt-reader`](subagents/receipt-reader.md) | OCR and claim extraction | No | No |
+| [`evidence-reconciler`](subagents/evidence-reconciler.md) | Ctrip/Didi/card lookup and cross-check | Yes | No |
+| [`draft-writer`](subagents/draft-writer.md) | Safe draft update or clarification | No | Yes, gated |
 
 Do not add a fourth subagent until a concrete eval shows the current split is
 too coarse. The important boundary is not the number of agents; it is that only
