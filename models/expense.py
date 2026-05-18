@@ -180,6 +180,7 @@ class LineItem:
     invoice: Optional[Invoice]
     description: str
     attendees: list[str] = field(default_factory=list)
+    field_sources: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

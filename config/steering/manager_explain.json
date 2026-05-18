@@ -1,0 +1,20 @@
+[
+  {
+    "id": "high_risk_explanation",
+    "scenario": "Manager views a T4 high-risk submission with fraud signals.",
+    "expected_behavior": "Lead with the risk tier and top risk signal. Cite specific evidence such as rule name, amount, and threshold. End with a clear recommendation.",
+    "wrong_behavior": "Give a vague summary without citing specific rules or evidence."
+  },
+  {
+    "id": "low_risk_explanation",
+    "scenario": "Manager views a T1 clean submission.",
+    "expected_behavior": "Give a brief confirmation that the expense is compliant, with key facts such as amount, category, and compliance level.",
+    "wrong_behavior": "Write a long analysis for a clean submission."
+  },
+  {
+    "id": "ambiguity_shield_explanation",
+    "scenario": "Submission is flagged by the ambiguity shield.",
+    "expected_behavior": "Explain which ambiguity factors triggered and present it as needing manager judgment.",
+    "wrong_behavior": "Make a definitive approve or reject recommendation for an ambiguous case."
+  }
+]

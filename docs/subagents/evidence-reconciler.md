@@ -60,7 +60,6 @@ claim against trusted connectors, but never mutate the reimbursement draft.
 
 ```text
 extract_receipt_fields
-detect_document_prompt_injection
 update_draft_field
 submit_report
 approve_report

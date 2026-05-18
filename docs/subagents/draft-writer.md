@@ -41,7 +41,6 @@ write capability, and it receives already-reconciled structured input.
 
 ```text
 extract_receipt_fields
-detect_document_prompt_injection
 lookup_ctrip_booking
 lookup_didi_trip
 lookup_card_transaction

@@ -20,6 +20,7 @@ from typing import Optional
 
 from config import ConfigLoader
 from agent.ambiguity_detector import AmbiguityDetector
+from backend.services.field_source_trust import field_source_trust_score
 from models.enums import ComplianceLevel
 from models.expense import (
     AmbiguityResult,
@@ -64,6 +65,7 @@ def process(
     engine = PolicyEngine(loader)
     normalizer = engine.city_normalizer
     detector = AmbiguityDetector(loader)
+    trust_config = (loader.get("policy") or {}).get("field_source_trust", {})
 
     line_details: list[LineItemComplianceDetail] = []
     all_levels: list[ComplianceLevel] = []
@@ -94,6 +96,18 @@ def process(
                 f"行[{idx}] {item.expense_type}: ¥{item.amount} 超标但在容忍度内"
                 f"(限额¥{limit})"
             )
+            if item.field_sources:
+                amount_source = item.field_sources.get("amount", "unknown")
+                normalized_source, trust_score = field_source_trust_score(
+                    amount_source,
+                    trust_config,
+                )
+                if trust_score < 0.7:
+                    issues.append(
+                        f"行[{idx}] 金额来源为{amount_source}"
+                        f"(归一化={normalized_source}, 信任度{trust_score:.1f})，"
+                        "且金额处于边界区间，建议人工复核金额准确性"
+                    )
         elif level == ComplianceLevel.C:
             issues.append(
                 f"行[{idx}] {item.expense_type}: ¥{item.amount} 超标拒绝"

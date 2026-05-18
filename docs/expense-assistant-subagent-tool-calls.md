@@ -114,7 +114,6 @@ too coarse. The important boundary is not the number of agents; it is that only
 | Tool | Owner subagent | Type | Purpose |
 |---|---|---|---|
 | `extract_receipt_fields` | `receipt-reader` | OCR/read | Extract merchant, amount, date, invoice number, tax, and confidence from the current draft receipt. |
-| `detect_document_prompt_injection` | `receipt-reader` | safety/read | Detect malicious instructions embedded in uploaded receipts or documents. |
 | `lookup_ctrip_booking` | `evidence-reconciler` | external evidence/read | Query Ctrip-style booking evidence for hotel, flight, train, or travel package claims. |
 | `lookup_didi_trip` | `evidence-reconciler` | external evidence/read | Query Didi-style ride evidence for taxi and ride-hailing claims. |
 | `lookup_card_transaction` | `evidence-reconciler` | external evidence/read | Query card transaction evidence for payment verification. |
@@ -122,6 +121,10 @@ too coarse. The important boundary is not the number of agents; it is that only
 | `get_policy_rules` | `evidence-reconciler` | policy/read | Fetch reimbursement policy, city tier, limits, tolerance, and payment rules. |
 | `suggest_category` | `evidence-reconciler` | classifier/read | Suggest reimbursement category from normalized claim and evidence. |
 | `update_draft_field` | `draft-writer` | mutation/write | Write a single draft field with an evidence source. |
+
+Prompt injection scanning is mandatory middleware around user/OCR text, not an
+agent-callable tool. Suspicious receipt free-text is redacted before it enters
+agent message history.
 
 ### Logical Steps That Are Not Provider Tools
 

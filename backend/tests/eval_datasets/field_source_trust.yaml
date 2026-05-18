@@ -1,0 +1,11 @@
+- id: b_level_ocr_amount_triggers_trust_warning
+  amount: 105.0
+  amount_source: ocr
+  expect_trust_warning: true
+  expect_ambiguity_factor: field_source_trust
+
+- id: b_level_api_amount_does_not_trigger_trust_warning
+  amount: 105.0
+  amount_source: api
+  expect_trust_warning: false
+  expect_ambiguity_factor: null

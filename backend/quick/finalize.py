@@ -101,6 +101,7 @@ async def save_draft_as_report_line(
         "project_code":   fields.get("project_code"),
         "description":    fields.get("description"),
         "receipt_url":    draft.receipt_url,
+        "ocr_data":       {"field_sources": dict(draft.field_sources or {})},
         "invoice_number": inv,
         "invoice_code":   fields.get("invoice_code"),
         "department":     department,
@@ -153,6 +154,9 @@ async def finalize_report(
     await db.commit()
 
     for s in lines:
+        field_sources = {}
+        if isinstance(s.ocr_data, dict):
+            field_sources = dict(s.ocr_data.get("field_sources") or {})
         background_tasks.add_task(_run_pipeline, s.id, {
             "employee_id":    ctx.user_id,
             "employee_name":  emp.name if emp else None,
@@ -168,6 +172,7 @@ async def finalize_report(
             "description":    s.description,
             "invoice_number": s.invoice_number,
             "invoice_code":   s.invoice_code,
+            "field_sources":  field_sources,
         })
 
     await create_audit_log(

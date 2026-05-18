@@ -82,7 +82,7 @@ employee message + draft context
 receipt-reader
   -> tools:
        extract_receipt_fields
-       detect_document_prompt_injection
+       (prompt-injection scan is middleware, not a tool)
   -> connectors through tools:
        ocr-provider
        trace-sink
