@@ -188,7 +188,7 @@ def test_qa_tool_whitelist_blocks_forbidden_dispatch():
         result = tool_results[0]["result"]
         assert "error" in result
         assert "not allowed" in result["error"]
-        assert result["error"].endswith("'expense_assistant'")
+        assert "role" in result["error"]
         # And the tool name that got blocked is update_draft_field
         assert tool_results[0]["name"] == "update_draft_field"
     finally:

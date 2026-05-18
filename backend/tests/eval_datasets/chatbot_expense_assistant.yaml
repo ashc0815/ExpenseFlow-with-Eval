@@ -306,7 +306,7 @@
           input: {amount: 86, merchant_hint: "DIDI"}
         - name: lookup_didi_trip
           input: {amount: 86}
-    - text: "能匹配到滴滴和卡交易，我补齐商户。"
+    - text: "能匹配到滴滴和卡交易，我补齐商户。来源是用户描述、信用卡交易和滴滴行程。"
       tool_calls:
         - name: update_draft_field
           input: {field: merchant, value: "滴滴出行", source: "didi_card_match"}
@@ -329,7 +329,7 @@
     - role: user
       content: "午餐发票丢了，我确认是海底捞 150 元，5月7日，团队午餐。"
   scripted_turns:
-    - text: "这类没有外部订单来源，我会按你确认的信息填草稿，并提示需要补充证明。"
+    - text: "这类没有外部订单来源，我会按你确认的信息填草稿，并提示需要补充证明，可能进入人工复核。"
       tool_calls:
         - name: update_draft_field
           input: {field: merchant, value: "海底捞", source: "user_confirmed"}
