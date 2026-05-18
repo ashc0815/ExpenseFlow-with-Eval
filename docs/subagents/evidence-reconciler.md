@@ -8,6 +8,21 @@ tools:
   - check_duplicate_invoice
   - get_policy_rules
   - suggest_category
+skills:
+  - external-evidence-reconciliation
+  - expense-policy-application
+  - provider-traceability
+connectors:
+  - ctrip-evidence-provider
+  - didi-evidence-provider
+  - card-transaction-provider
+  - duplicate-expense-ledger
+  - expense-policy-store
+  - category-classifier
+  - trace-sink
+handoff_to:
+  - draft-writer
+output_schema: EvidenceBundleWithReconciliationDecision
 ---
 
 # evidence-reconciler
@@ -17,6 +32,18 @@ tools:
 Gather external and internal evidence for the normalized claim, record traceable
 tool calls, and decide whether the evidence is sufficient for a draft write.
 This subagent is read-only: it may not call `update_draft_field`.
+
+## Relationship Model
+
+This subagent applies
+[`external-evidence-reconciliation`](../skills/external-evidence-reconciliation.md),
+[`expense-policy-application`](../skills/expense-policy-application.md), and
+[`provider-traceability`](../skills/provider-traceability.md). It accesses
+Ctrip, Didi, card, duplicate, policy, and category connectors only through the
+allowed tools below. It has no draft-store connector and no write tools.
+
+This is the ExpenseFlow equivalent of Anthropic's read-only critic: verify the
+claim against trusted connectors, but never mutate the reimbursement draft.
 
 ## Tools Allowed
 

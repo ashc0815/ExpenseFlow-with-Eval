@@ -3,6 +3,13 @@ name: draft-writer
 description: Use this subagent to write reimbursement draft fields only after reconciliation returns can_write_draft, or to produce the final clarification/blocker message.
 tools:
   - update_draft_field
+skills:
+  - safe-draft-writing
+  - provider-traceability
+connectors:
+  - draft-store
+  - trace-sink
+output_schema: DraftWriteResult
 ---
 
 # draft-writer
@@ -12,6 +19,17 @@ tools:
 Apply a safe reconciliation decision to the draft. This is the only subagent
 that may mutate draft fields. It must not gather external evidence and must not
 submit, approve, reject, or pay reports.
+
+## Relationship Model
+
+This subagent applies
+[`safe-draft-writing`](../skills/safe-draft-writing.md) and
+[`provider-traceability`](../skills/provider-traceability.md). It uses the
+`draft-store` connector only through `update_draft_field` and has no OCR,
+Ctrip, Didi, card, policy, or duplicate connectors.
+
+This is the ExpenseFlow equivalent of Anthropic's resolver: the only worker with
+write capability, and it receives already-reconciled structured input.
 
 ## Tools Allowed
 

@@ -63,6 +63,10 @@ finance-agent guidance:
   normalized request, normalized response, provider mode, fixture id if mock,
   selected candidate, and reconciliation result.
 
+For the full agent/skill/connector relationship model, see
+[`expense-assistant-agent-stack.md`](expense-assistant-agent-stack.md). The rest
+of this document focuses on subagent tool-call behavior and eval cases.
+
 ---
 
 ## Canonical Subagents
@@ -84,6 +88,10 @@ name: receipt-reader
 description: Use this subagent to ...
 tools:
   - extract_receipt_fields
+skills:
+  - receipt-claim-extraction
+connectors:
+  - ocr-provider
 ---
 ```
 

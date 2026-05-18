@@ -45,6 +45,8 @@ update_draft_field
 For the subagent ownership, tool-call routing, failure-mode matrix, trace
 assertions, and eval manifest shape, see
 [`expense-assistant-subagent-tool-calls.md`](expense-assistant-subagent-tool-calls.md).
+For the higher-level agent/skill/connector relationship model, see
+[`expense-assistant-agent-stack.md`](expense-assistant-agent-stack.md).
 
 The examples below focus on the Ctrip + card path:
 
