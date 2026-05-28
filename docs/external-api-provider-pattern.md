@@ -1,453 +1,495 @@
-# External API Provider Pattern — Vendor-Agnostic Integration with Traceability
+# External Evidence Provider Pattern
 
-> **Status:** Pattern doc. Codifies how to integrate any external API
-> (travel booking, ride-share, credit-card statements, ERP exports) into
-> ExpenseFlow with three guarantees: vendor-agnostic, testable without
-> the real vendor, every call traceable for audit.
+> **Status:** Pattern doc for the employee expense assistant.
 >
-> **Companion to:** [`agent-eval-dimensions.md`](agent-eval-dimensions.md)
-> (this pattern enables dimensions ④⑤⑥), [`hybrid-fraud-architecture.md`](hybrid-fraud-architecture.md)
-> (OODA agent calls these tools), [`integration-design.md`](integration-design.md)
-> (ERP-side integrations follow the same shape).
->
-> **Use this when:** the agent needs to read or write to a third-party
-> system (Ctrip, DiDi, Amadeus, Stripe, NetSuite, 12306, credit-card
-> issuer, …) and you don't want vendor coupling, can't always hit the
-> real API in tests, and must satisfy audit traceability.
+> This document defines how ExpenseFlow should integrate external evidence
+> providers for receipt completion, especially Ctrip/Trip.com bookings and
+> corporate-card transactions. It deliberately focuses on the employee
+> reimbursement assistant flow, not the fraud/OODA investigator.
 
 ---
 
 ## TL;DR
 
-Every external-API integration in ExpenseFlow follows the same 3-layer
-shape:
+The employee assistant can use external evidence to complete a draft only
+when the evidence is unique, normalized, and reconciled.
 
-```
-┌──────────────────────────────────────────┐
-│  Abstract interface (Protocol / ABC)     │  ← the contract
-│  e.g. TravelProvider.get_trips(...)      │
-└───────────────────┬──────────────────────┘
-                    ↑ implemented by
-┌─────────┬─────────┴────────┬─────────────┐
-│ Mock    │ Sandbox / Real   │ Stub        │  ← swappable impls
-│ Provider│ Provider (prod)  │ (raises NIE)│
-└─────────┴────────┬─────────┴─────────────┘
-                   ↓ wrapped in
-┌──────────────────────────────────────────┐
-│  TraceableProvider                        │  ← logs every call
-│  records request + response + latency     │     to external_api_trace
-└───────────────────┬──────────────────────┘
-                    ↓ consumed by
-┌──────────────────────────────────────────┐
-│  OODA agent tool                          │  ← agent uses it
-│  e.g. check_travel_booking(...)           │     just like any other tool
-└──────────────────────────────────────────┘
-```
+The core contract is:
 
-**Selection** is via env var (`TRAVEL_PROVIDER=mock|amadeus|ctrip`); the
-agent code never hardcodes a vendor. **Tracing** is automatic and lands
-in a single audit table that the dashboard can replay.
+1. Providers are swappable: `mock`, `sandbox`, `real`, or `stub`.
+2. Mock fixtures are first-class and drive evals.
+3. Provider responses normalize into one candidate schema.
+4. Ctrip booking evidence must be reconciled against card evidence before
+   the assistant writes fields that affect reimbursement.
+5. If evidence remains uncertain after 5 external-evidence tool calls in the
+   same turn, the agent stops tool use, asks the user to confirm missing
+   information, and waits for the next user reply.
+6. Every provider call is traceable enough to replay the decision.
+
+The agent should never infer a reimbursable amount from vibes. Evidence first,
+clarification second, write last.
 
 ---
 
-## The 3 layers in detail
+## Scope
 
-### Layer 1 — Abstract interface (the contract)
+This pattern covers these employee-facing tools:
 
-```python
-# backend/services/travel_provider.py
-from abc import ABC, abstractmethod
-from typing import Optional
-
-class Trip(BaseModel):
-    employee_id: str
-    trip_type: str           # flight / hotel / train / taxi
-    departure_date: Optional[date]
-    arrival_date: Optional[date]
-    origin_city: Optional[str]
-    destination_city: Optional[str]
-    cost: float
-    currency: str
-    booking_reference: str
-    provider_metadata: dict  # raw vendor blob for debugging
-
-class TravelProvider(ABC):
-    @abstractmethod
-    async def get_trips(
-        self,
-        employee_id: str,
-        date_range: tuple[date, date],
-        *,
-        trace_id: Optional[str] = None,
-    ) -> list[Trip]:
-        """Return all known trips for this employee in the date range."""
+```text
+lookup_ctrip_booking
+lookup_card_transaction
+lookup_didi_trip
+update_draft_field
 ```
 
-**Why a Protocol / ABC**: the agent and tool layer only see this
-contract. Adding a new vendor = implement this interface. **Removing**
-a vendor = delete one file. Zero ripple to agent code.
+For the subagent ownership, tool-call routing, failure-mode matrix, trace
+assertions, and eval manifest shape, see
+[`expense-assistant-subagent-tool-calls.md`](expense-assistant-subagent-tool-calls.md).
+For the higher-level agent/skill/connector relationship model, see
+[`expense-assistant-agent-stack.md`](expense-assistant-agent-stack.md).
 
-### Layer 2 — Implementations (swappable)
+The examples below focus on the Ctrip + card path:
+
+```text
+user says: "Ctrip hotel order, May 9, Shenzhen, 680 CNY"
+  -> lookup_ctrip_booking(...)
+  -> lookup_card_transaction(...)
+  -> reconcile booking status, refund, net amount, card charge
+  -> update_draft_field(...) only if safe
+```
+
+This pattern does not cover approval, rejection, payment, or fraud
+investigation tools. Those may reuse provider infrastructure, but they are not
+the acceptance target for this document.
+
+---
+
+## Provider Shape
+
+Each external domain gets a small provider interface plus mock/sandbox/real
+implementations. The agent tool calls the interface, not a vendor SDK.
 
 ```python
-# Mock — for dev, demos, eval
-class MockTravelProvider(TravelProvider):
-    """Loads from YAML fixture; deterministic per (employee_id, date_range)."""
-
-    def __init__(self, fixture_path: Path = None):
-        self._fixtures = yaml.safe_load(
-            (fixture_path or DEFAULT_FIXTURES).read_text()
-        )
-
-    async def get_trips(self, employee_id, date_range, *, trace_id=None):
-        start, end = date_range
-        return [
-            Trip(**t) for t in self._fixtures
-            if t["employee_id"] == employee_id
-            and start <= t["departure_date"] <= end
-        ]
-
-# Sandbox — real API but no production side effects
-class AmadeusProvider(TravelProvider):
-    """Amadeus Self-Service sandbox. Real shape, no real bookings."""
-    def __init__(self):
-        self._client = amadeus.Client(
-            client_id=os.getenv("AMADEUS_CLIENT_ID"),
-            client_secret=os.getenv("AMADEUS_CLIENT_SECRET"),
-            hostname="test",  # sandbox
-        )
-    async def get_trips(self, employee_id, date_range, *, trace_id=None):
-        # translate to Amadeus API, normalize to Trip
+class CtripBookingProvider(Protocol):
+    async def lookup_booking(self, query: CtripBookingQuery) -> EvidenceLookupResult:
         ...
 
-# Stub — production placeholder that screams loudly
-class CtripProvider(TravelProvider):
-    """Real Ctrip integration. Not built yet."""
-    async def get_trips(self, *args, **kwargs):
-        raise NotImplementedError(
-            "Ctrip integration is a Phase-3 item. "
-            "Use TRAVEL_PROVIDER=mock or amadeus."
-        )
+
+class CardTransactionProvider(Protocol):
+    async def lookup_transaction(self, query: CardTransactionQuery) -> EvidenceLookupResult:
+        ...
 ```
 
-**The stub matters.** Without `CtripProvider` even as `NotImplementedError`,
-nothing in the codebase signals "this vendor was considered." The stub
-is the architectural commitment.
+Provider selection is environment-driven:
 
-### Layer 3 — Traceable wrapper (the audit layer)
-
-```python
-# backend/services/traceable_provider.py
-import uuid
-from contextlib import asynccontextmanager
-
-class TraceableTravelProvider(TravelProvider):
-    """Decorator that logs every call to external_api_trace table."""
-
-    def __init__(self, inner: TravelProvider):
-        self._inner = inner
-        self._provider_name = type(inner).__name__
-
-    async def get_trips(self, employee_id, date_range, *, trace_id=None):
-        request = {"employee_id": employee_id,
-                   "date_range": [d.isoformat() for d in date_range]}
-        timer = TraceTimer()
-        try:
-            with timer:
-                response = await self._inner.get_trips(
-                    employee_id, date_range, trace_id=trace_id
-                )
-            await self._log(
-                trace_id=trace_id, request=request,
-                response=[t.model_dump() for t in response],
-                latency_ms=timer.elapsed_ms, error=None,
-            )
-            return response
-        except Exception as exc:
-            await self._log(
-                trace_id=trace_id, request=request, response=None,
-                latency_ms=timer.elapsed_ms, error=f"{type(exc).__name__}: {exc}",
-            )
-            raise
-
-    async def _log(self, *, trace_id, request, response, latency_ms, error):
-        async with get_session() as db:
-            db.add(ExternalAPITrace(
-                trace_id=trace_id or str(uuid.uuid4()),
-                provider=self._provider_name,
-                operation="get_trips",
-                request=request,
-                response=response,
-                latency_ms=latency_ms,
-                error=error,
-            ))
-            await db.commit()
+```text
+CTRIP_PROVIDER=mock|sandbox|real|stub
+CARD_PROVIDER=mock|sandbox|real|stub
 ```
 
-**Why wrap rather than mix in**: keeps each impl focused on the contract
-(no logging boilerplate per provider). Adding a new metric (e.g., cost
-tracking) = update the wrapper once, applies to all providers.
+Rules:
 
-### The factory (selection lives here, nowhere else)
+- `mock` is the default for local dev, demo, CI, and eval.
+- `sandbox` uses a vendor or MCP sandbox and must normalize into the same
+  schema as mock.
+- `real` is production integration and must have trace logging enabled.
+- `stub` returns a structured `provider_not_configured` result. It should not
+  pretend no order exists.
 
-```python
-# backend/services/travel_provider.py
-
-_PROVIDER_REGISTRY = {
-    "mock":    MockTravelProvider,
-    "amadeus": AmadeusProvider,
-    "ctrip":   CtripProvider,
-}
-
-def get_travel_provider() -> TravelProvider:
-    """Resolve the configured provider, wrapped in trace logging."""
-    name = os.getenv("TRAVEL_PROVIDER", "mock")
-    if name not in _PROVIDER_REGISTRY:
-        raise ValueError(
-            f"Unknown TRAVEL_PROVIDER={name}. "
-            f"Valid: {sorted(_PROVIDER_REGISTRY)}"
-        )
-    return TraceableTravelProvider(_PROVIDER_REGISTRY[name]())
-```
-
-**Single point of truth**. Want to add a Chinese vendor like 飞猪 (Fliggy)?
-Add one line to the registry. Want to A/B test two impls? Wrap the factory.
+Do not let a missing integration surface as "no matching order." That is a
+different business fact. Missing provider means "cannot verify with this
+provider yet."
 
 ---
 
-## The audit table
+## Normalized Candidate Schema
+
+All Ctrip and card providers return the same top-level result shape:
+
+```json
+{
+  "source": "ctrip_mock",
+  "provider": "mock",
+  "status": "ok",
+  "query": {},
+  "candidates": [],
+  "confidence": 0.0,
+  "error": null
+}
+```
+
+`status` values:
+
+```text
+ok
+not_configured
+provider_error
+timeout
+malformed_response
+auth_error
+rate_limited
+```
+
+Candidate fields for Ctrip:
+
+```json
+{
+  "booking_id": "ctrip-hotel-001",
+  "booking_type": "hotel",
+  "status": "active",
+  "date": "2026-05-09",
+  "merchant": "Ctrip",
+  "vendor": "Shenzhen Nanshan Business Hotel",
+  "amount": 680.0,
+  "refund_amount": 0.0,
+  "net_amount": 680.0,
+  "currency": "CNY",
+  "city": "Shenzhen",
+  "nights": 1,
+  "hotel": "Shenzhen Nanshan Business Hotel",
+  "invoice_status": "issued",
+  "invoice_available": true
+}
+```
+
+Candidate fields for card:
+
+```json
+{
+  "transaction_id": "card-003",
+  "date": "2026-05-09",
+  "merchant": "SHENZHEN HOTEL",
+  "amount": 680.0,
+  "refund_amount": 0.0,
+  "net_amount": 680.0,
+  "currency": "CNY",
+  "card_last4": "1888"
+}
+```
+
+The normalized schema is the eval contract. Mock, sandbox, and real providers
+must all return these fields where available.
+
+---
+
+## Reconciliation Contract
+
+The assistant can write draft fields only after reconciliation returns a safe
+decision.
+
+```python
+class ReconciliationDecision(TypedDict):
+    status: Literal["can_write_draft", "blocked_write", "needs_user_clarification"]
+    reason: str
+    labels: list[str]
+    claim_amount: float | None
+    verified_amount: float | None
+    category: Literal["accommodation", "transport", "meal", "other"] | None
+```
+
+Decision rules:
+
+- One Ctrip candidate + one matching card transaction:
+  `can_write_draft`, label `ctrip_card_match`.
+- One Ctrip candidate + no unique card match:
+  can write only low-risk descriptive fields if product policy allows it;
+  otherwise `needs_user_clarification`.
+- Cancelled booking with `net_amount <= 0`:
+  `blocked_write`, label `booking_cancelled/full_refund`.
+- Claimed amount greater than verified net amount by tolerance:
+  `blocked_write`, label `over_claim_risk`.
+- Multiple Ctrip or card candidates:
+  `needs_user_clarification`.
+- Provider not configured or provider error:
+  `needs_user_clarification`; do not say "no order found."
+- No candidate:
+  `needs_user_clarification` unless the user explicitly asks a policy-only
+  question.
+
+Fields that can be written after `can_write_draft`:
+
+```text
+merchant
+amount
+date
+category
+description
+```
+
+Each write must include a source such as:
+
+```text
+ctrip_card_match
+ctrip_booking_only
+ctrip_booking_partial_claim
+card_transaction_match
+```
+
+---
+
+## Five-Attempt Clarification Guard
+
+The employee assistant must not loop forever trying slightly different external
+evidence queries.
+
+Within a single agent turn, count calls to:
+
+```text
+lookup_ctrip_booking
+lookup_card_transaction
+lookup_didi_trip
+```
+
+If the count reaches 5 and the agent has not safely progressed to a draft
+update or a blocking decision, the turn must end with:
+
+```text
+message_end.stop_reason = "needs_user_clarification"
+```
+
+The assistant should ask for concrete missing facts:
+
+```text
+order id
+date
+amount
+city / hotel / flight / route / merchant keyword
+refund, cancellation, or rebooking status
+```
+
+When the user replies, that reply starts a new turn and the attempt counter
+resets. The agent may then call the provider tools again with the confirmed
+information.
+
+This guard is not a substitute for provider integration. It is a safety rail
+for both mock and real providers.
+
+---
+
+## Draft Context Gate
+
+External evidence completion is a draft-writing flow. If the request arrives
+without `draft_id`, the assistant should not attempt to write fields.
+
+Expected behavior:
+
+- With `draft_id`: external evidence tools may be used, then
+  `update_draft_field` may run if reconciliation is safe.
+- Without `draft_id`: answer policy/read-only questions, or ask the user to
+  open/create a draft before completion.
+- On a report detail page for a rejected report: guide the user to "re-edit"
+  or create a new draft before trying to complete missing evidence.
+
+This avoids the misleading failure mode where the assistant says it cannot
+find an order when the real problem is that there is no writable draft context.
+
+---
+
+## Trace Schema
+
+Every provider call should be replayable. A trace row should answer:
+
+- What tool was called?
+- Which provider mode handled it?
+- What normalized request was sent?
+- What normalized candidates came back?
+- Was this the first or fifth attempt in the turn?
+- Did the call contribute to a write, a block, or a clarification?
+
+Recommended table:
 
 ```sql
 CREATE TABLE external_api_trace (
-    id            TEXT    PRIMARY KEY,
-    trace_id      TEXT    NOT NULL,   -- ties to submission processing flow
-    provider      TEXT    NOT NULL,   -- "MockTravelProvider" / "AmadeusProvider"
-    operation     TEXT    NOT NULL,   -- "get_trips" / "get_booking" / etc.
-    request       JSON    NOT NULL,
-    response      JSON,                -- NULL when error
-    latency_ms    INTEGER,
-    error         TEXT,                -- NULL on success
-    created_at    TIMESTAMP NOT NULL DEFAULT NOW()
+    id                       TEXT PRIMARY KEY,
+    trace_id                 TEXT NOT NULL,
+    conversation_turn_id     TEXT,
+    draft_id                 TEXT,
+    report_id                TEXT,
+    user_id                  TEXT,
+
+    tool_name                TEXT NOT NULL,
+    provider_domain          TEXT NOT NULL, -- ctrip_booking / card_transaction
+    provider_name            TEXT NOT NULL, -- MockCtripProvider / StripeCardProvider
+    provider_mode            TEXT NOT NULL, -- mock / sandbox / real / stub
+    operation                TEXT NOT NULL, -- lookup_booking / lookup_transaction
+    attempt_index            INTEGER NOT NULL,
+
+    request_normalized       JSON NOT NULL,
+    response_normalized      JSON,
+    candidate_count          INTEGER NOT NULL DEFAULT 0,
+    selected_candidate_id    TEXT,
+
+    reconciliation_status    TEXT, -- can_write_draft / blocked_write / needs_user_clarification
+    reconciliation_labels    JSON,
+    clarification_required   BOOLEAN NOT NULL DEFAULT FALSE,
+    fields_written           JSON,
+
+    latency_ms               INTEGER,
+    error                    TEXT,
+    created_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_eat_trace_id ON external_api_trace(trace_id);
-CREATE INDEX idx_eat_provider_created ON external_api_trace(provider, created_at);
-CREATE INDEX idx_eat_error ON external_api_trace(error) WHERE error IS NOT NULL;
+CREATE INDEX idx_external_trace_trace_id ON external_api_trace(trace_id);
+CREATE INDEX idx_external_trace_turn ON external_api_trace(conversation_turn_id);
+CREATE INDEX idx_external_trace_draft ON external_api_trace(draft_id);
+CREATE INDEX idx_external_trace_provider ON external_api_trace(provider_domain, provider_mode, created_at);
+CREATE INDEX idx_external_trace_error ON external_api_trace(error) WHERE error IS NOT NULL;
 ```
 
-**What this enables**:
+Minimum trace payloads for eval replay:
 
-| Use case | Query |
-|---|---|
-| "What did the agent see when investigating submission X?" | `SELECT * FROM external_api_trace WHERE trace_id = (SELECT trace_id FROM llm_traces WHERE submission_id = X)` |
-| "Show me all Ctrip calls that errored this week" | `SELECT * FROM external_api_trace WHERE provider = 'CtripProvider' AND error IS NOT NULL AND created_at > NOW() - 7d` |
-| "Replay this call in a test" | Load `request`, pass to the same provider, compare response |
-| "P95 latency by provider" | `SELECT provider, percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms) FROM external_api_trace GROUP BY 1` |
+```json
+{
+  "tool_name": "lookup_ctrip_booking",
+  "provider_mode": "mock",
+  "attempt_index": 3,
+  "request_normalized": {"date": "2026-05-09", "amount": 680, "merchant_hint": "Shenzhen"},
+  "response_normalized": {"status": "ok", "candidates": []},
+  "candidate_count": 0,
+  "clarification_required": false
+}
+```
 
 ---
 
-## OODA agent integration
+## Eval Contract
 
-The agent's tool registry sees a clean function; the 3-layer architecture
-is invisible to it:
+The eval suite should test the assistant behavior, not just provider behavior.
 
-```python
-# agent/investigation_tools.py
+Required assertions:
 
-async def check_travel_booking(employee_id: str, date: str) -> dict:
-    """Check Ctrip / Amadeus / mock for trip records on the given date.
-
-    Returns:
-        {
-            "has_booking": bool,
-            "trips": [...],                  # full Trip records
-            "conflict_signals": [             # pre-computed flags
-                "geo_mismatch_with_submission",
-                "no_booking_for_claimed_train_fare",
-                ...
-            ]
-        }
-    """
-    provider = get_travel_provider()
-    target = date.fromisoformat(date)
-    trips = await provider.get_trips(
-        employee_id, (target, target),
-        trace_id=current_trace_id(),  # propagated from OODA loop
-    )
-    return {
-        "has_booking": len(trips) > 0,
-        "trips": [t.model_dump() for t in trips],
-        "conflict_signals": _detect_conflicts(trips, ...),
-    }
-
-INVESTIGATION_TOOLS["check_travel_booking"] = check_travel_booking
+```text
+must_call_tools
+forbidden_tools_absent
+response_contains
+final_fields
+message_end.stop_reason
 ```
 
-That's all the OODA agent ever sees. Provider selection, vendor SDK
-quirks, trace logging — all hidden.
-
----
-
-## What this pattern enables for eval
-
-Maps to [`agent-eval-dimensions.md`](agent-eval-dimensions.md) dimensions:
-
-| Dimension | What this pattern unlocks |
-|---|---|
-| ⑤ Tool-call stability | Mock provider can return errors / empty lists / weird shapes deterministically. Test that agent handles them. |
-| ⑥ Conflict detection | Mock fixtures can inject contradictions (Ctrip says Beijing, submission says Shanghai). Test that agent catches them. |
-| ④ Prompt injection | Mock can return strings like "Ignore previous instructions" in `description` fields. Test that agent treats them as data. |
-| ⑦ Cross-model | Run the same fixture set through 4 LLM backends. The vendor is held constant; the LLM is the variable. |
-
-### Capability case examples this unlocks
+Required cases:
 
 ```yaml
-# eval_capability_fraud_investigator.yaml additions
-- id: fri_travel_001_geo_conflict
-  description: "Submission claims Beijing trip; Ctrip mock returns Shanghai booking same day"
+- id: ctrip_card_unique_match_writes_draft
+  user: "Shenzhen hotel receipt is blurry. Ctrip order May 9, 680 CNY."
+  context: {draft_id: draft-1}
   fixtures:
-    travel_provider: mock_geo_conflict.yaml
-  submission:
-    date: 2026-06-15
-    employee_id: emp_dev
-    city: Beijing
+    ctrip_provider: ctrip_hotel_680.yaml
+    card_provider: card_hotel_680.yaml
+  must_call_tools: [lookup_ctrip_booking, lookup_card_transaction, update_draft_field]
+  final_fields:
+    merchant: "Shenzhen Nanshan Business Hotel"
+    amount: 680
     category: accommodation
-  expected_verdict: fraud
-  must_call_tools: [check_travel_booking]
 
-- id: fri_travel_002_no_booking_for_train_claim
-  description: "Train fare claimed; Ctrip mock returns empty"
+- id: ctrip_over_claim_blocks_write
+  user: "Ctrip hotel order May 9 Shenzhen 900 CNY, complete this."
+  context: {draft_id: draft-1}
   fixtures:
-    travel_provider: mock_empty.yaml
-  submission:
-    date: 2026-06-15
-    category: transport
-    description: "高铁 上海-北京"
-    amount: 580
-  expected_verdict: suspicious
+    ctrip_provider: ctrip_hotel_680.yaml
+    card_provider: card_hotel_680.yaml
+  must_call_tools: [lookup_ctrip_booking, lookup_card_transaction]
+  forbidden_tools_absent: [update_draft_field]
+  response_contains: ["higher than verified net amount"]
 
-- id: fri_travel_003_provider_500_error
-  description: "Travel API returns 500; agent must fall back gracefully"
+- id: ctrip_multiple_candidates_asks_user
+  user: "Ctrip hotel May 9 680 CNY."
+  context: {draft_id: draft-1}
   fixtures:
-    travel_provider: mock_always_error.yaml
-  expected_verdict: suspicious  # NOT clean — failure to verify ≠ verified
-  expected_reasoning_contains: "could not confirm via travel provider"
+    ctrip_provider: ctrip_two_hotels_same_amount.yaml
+  must_call_tools: [lookup_ctrip_booking]
+  forbidden_tools_absent: [update_draft_field]
+  response_contains: ["confirm", "order"]
+
+- id: ctrip_provider_not_configured_does_not_claim_no_order
+  user: "Ctrip order May 9 680 CNY, complete this."
+  context: {draft_id: draft-1}
+  fixtures:
+    ctrip_provider: stub_not_configured.yaml
+  must_call_tools: [lookup_ctrip_booking]
+  forbidden_tools_absent: [update_draft_field]
+  response_contains: ["provider", "not configured"]
+  response_must_not_contain: ["no order found"]
+
+- id: external_evidence_five_attempts_needs_clarification
+  user: "Ctrip hotel order amount is unclear, complete this."
+  context: {draft_id: draft-1}
+  fixtures:
+    ctrip_provider: always_empty.yaml
+  must_call_tools:
+    - lookup_ctrip_booking
+  expected_tool_call_count: 5
+  forbidden_tools_absent: [update_draft_field]
+  message_end:
+    stop_reason: needs_user_clarification
+  response_contains: ["5", "confirm"]
+
+- id: user_clarifies_then_agent_continues
+  turns:
+    - user: "Ctrip hotel order amount is unclear, complete this."
+      expected_stop_reason: needs_user_clarification
+    - user: "Order id is ctrip-hotel-001, May 9, Shenzhen, 680 CNY, no refund."
+      must_call_tools: [lookup_ctrip_booking, lookup_card_transaction, update_draft_field]
+  final_fields:
+    amount: 680
+    category: accommodation
 ```
 
-Cases like `fri_travel_003` are the **real test** of agent flexibility —
-not "does the agent get the right answer when data is clean," but
-"does the agent degrade gracefully when its data sources fail."
+Mock fixtures must include:
+
+- unique Ctrip + unique card match
+- Ctrip unique but card missing
+- card unique but Ctrip missing
+- multiple Ctrip candidates
+- multiple card candidates
+- cancelled / full refund
+- partial refund
+- provider not configured
+- provider timeout / 500
+- malformed provider response
+- prompt injection string inside vendor metadata
 
 ---
 
-## When NOT to use this pattern
+## Provider Checklist
 
-Don't reach for this when:
+Before merging a new external evidence provider:
 
-- **One-off integration with no test concerns** — if you call an external
-  API exactly once at startup (e.g., loading a static config), just call
-  it inline. Three layers of abstraction is overkill for one call site.
-- **The vendor has no equivalent in your dev environment AND no sandbox**
-  — without a Mock or Sandbox impl, the pattern degrades to "one Real
-  impl plus dead stubs." Build the integration when you can build the
-  Mock alongside it.
-- **The API mutates external state and you cannot safely mock writes**
-  — for write APIs like Stripe transfers or NetSuite journal posts, the
-  pattern still helps but you need a **sandbox** that simulates writes,
-  not just a fixture-replaying Mock.
-
----
-
-## Sequencing for adding a new vendor
-
-When adding `XyzProvider` for vendor Xyz:
-
-1. **Day 0 — define the interface** *(if it's a new domain)*
-   - Write the ABC + DTO types
-   - Skeleton `MockXyzProvider` returning `[]`
-   - Skeleton `XyzProvider(NotImplementedError)`
-   - Wire factory + env var
-2. **Day 1 — Mock is the real deliverable**
-   - 10-30 fixture cases covering normal + edge + error
-   - Mock provider returns from fixtures deterministically
-   - One unit test confirms determinism
-3. **Day 2 — agent tool**
-   - Wrap provider call in a new `INVESTIGATION_TOOLS` entry
-   - One eval case proving the agent calls it correctly
-4. **Day 3 — capability cases**
-   - 5-7 cases exploiting the Mock's edge fixtures
-   - At least one "provider returns error" case
-5. **Future — sandbox**
-   - When the real vendor has a sandbox tier (Amadeus, Stripe), implement
-   - Run capability cases against sandbox to verify Mock fidelity
-6. **Future — production**
-   - Replace `NotImplementedError` stub with real impl
-   - Trace logging already in place (Layer 3 is provider-agnostic)
-   - Watch `external_api_trace` for first-week anomalies
-
-Total: **3-4 days to a fully eval-ready new vendor**. Production hookup
-is a much smaller increment because the contract / tests / monitoring
-are already there.
+- [ ] Interface returns normalized lookup results.
+- [ ] Mock provider exists and is the default.
+- [ ] Fixtures cover success, empty, multiple, refund, error, malformed, and injection-like metadata.
+- [ ] Sandbox/real provider normalizes into the same schema.
+- [ ] Missing provider returns `not_configured`, not "no match."
+- [ ] Tool handler does not leak vendor SDK details to the agent.
+- [ ] Trace row includes provider mode, attempt index, request, response, candidate count, and reconciliation outcome.
+- [ ] Evals assert no write on uncertain evidence.
+- [ ] Evals assert 5 attempts -> `needs_user_clarification`.
+- [ ] Evals assert user clarification lets the next turn continue.
 
 ---
 
-## Pattern checklist
+## Current Implementation Notes
 
-When reviewing a PR that adds an external integration:
+As of this pattern update, the code already has deterministic local mock
+fixtures inside the employee chat route for:
 
-- [ ] Abstract interface in `backend/services/{vendor}_provider.py`?
-- [ ] Mock impl with fixture file?
-- [ ] Stub impl raising `NotImplementedError` for unbuilt vendors?
-- [ ] Factory function reads selection from env var?
-- [ ] `TraceableXxxProvider` wraps the factory output?
-- [ ] `external_api_trace` table is written on every call?
-- [ ] At least one eval case uses the Mock?
-- [ ] At least one eval case tests provider failure (5xx / empty / malformed)?
-- [ ] Vendor SDK leaked into agent code? **(NO — it should not)**
+```text
+lookup_ctrip_booking
+lookup_card_transaction
+lookup_didi_trip
+```
 
-If any "no," the PR needs more work before merge.
+The Ctrip/card mock path includes a known happy path:
 
----
+```text
+date: 2026-05-09
+city: Shenzhen
+amount: 680 CNY
+category: accommodation
+```
 
-## What this doc deliberately doesn't do
+The assistant also has a hard guard for 5 external-evidence tool attempts in
+one turn. If still unresolved, it pauses for user clarification rather than
+continuing to tool-call or guessing.
 
-- **Doesn't dictate which vendors to integrate first.** That's a product
-  decision driven by customer demand, not architecture.
-- **Doesn't replace `integration-design.md`** — that doc handles the
-  ERP-side designs (NetSuite, Stripe Issuing, Excel-as-bridge), which
-  follow this same pattern but at the SaaS-to-SaaS boundary not the
-  agent-to-vendor boundary.
-- **Doesn't promise that any specific provider exists today.** As of
-  this writing the only built provider is `MockTravelProvider`
-  (when Phase 2 of the travel integration ships). The doc is the
-  contract for adding more.
-- **Doesn't introduce VCR / cassette recording.** Mock fixtures are
-  simpler and don't require ever hitting the real API. If a future
-  vendor requires record-replay (e.g., one-time real responses to
-  capture), reach for `vcrpy`; until then, fixtures-from-scratch are
-  enough.
-
----
-
-## References
-
-- [`agent-eval-dimensions.md`](agent-eval-dimensions.md) — dimensions
-  ④⑤⑥ specifically enabled by this pattern (prompt injection /
-  tool-call stability / conflict detection).
-- [`hybrid-fraud-architecture.md`](hybrid-fraud-architecture.md) — the
-  OODA agent that consumes provider-backed tools.
-- [`integration-design.md`](integration-design.md) — ERP-side adapter
-  design that mirrors this pattern for outbound integrations.
-- [`code-health-audit.md`](code-health-audit.md) — the "name the
-  abstraction, don't sprinkle vendor code through endpoints" discipline
-  that this pattern operationalizes.
-- Anthropic *Building Effective Agents* (2024) — the tool-as-boundary
-  model that frames external APIs as just another tool.
-
----
-
-*This doc is the contract for how ExpenseFlow talks to the outside
-world. When asked "how do you integrate with X?" the answer is
-"follow this pattern — implement the interface, write a Mock, drop the
-factory entry, and the trace + eval surface come for free." That's the
-discipline.*
+Future work should move inline mock data into provider modules and fixtures,
+then add `external_api_trace` persistence around both mock and real providers.

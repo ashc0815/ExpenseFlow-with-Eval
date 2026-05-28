@@ -148,6 +148,29 @@ def test_qa_default_welcome_for_unrelated_question():
     assert len(texts) > 0, "should have at least one assistant text response"
 
 
+def test_identity_question_is_answered_by_backend_not_llm():
+    from backend.api.routes import chat as chat_mod
+
+    orig_get_llm = chat_mod.get_llm
+    chat_mod.get_llm = lambda: (_ for _ in ()).throw(AssertionError("identity should not call LLM"))
+    try:
+        resp = client.post(
+            "/api/chat/message",
+            headers=HEADERS,
+            json={"messages": [{"role": "user", "content": "你是什么模型？"}]},
+        )
+        assert resp.status_code == 200
+        events = _parse_sse(resp.text)
+        kinds = [e["type"] for e in events]
+        assert kinds == ["message_start", "assistant_text", "message_end"]
+        text = " ".join(e.get("text", "") for e in events if e["type"] == "assistant_text")
+        assert "ExpenseFlow" in text
+        assert "不是 Claude" in text
+        assert "Anthropic" not in text
+    finally:
+        chat_mod.get_llm = orig_get_llm
+
+
 def test_qa_tool_whitelist_blocks_forbidden_dispatch():
     """Prompt-injection defense: even if the LLM hallucinates an update_draft_field
     tool_call, the stateless drawer rejects draft writes without a draft_id.
@@ -188,7 +211,7 @@ def test_qa_tool_whitelist_blocks_forbidden_dispatch():
         result = tool_results[0]["result"]
         assert "error" in result
         assert "not allowed" in result["error"]
-        assert result["error"].endswith("'expense_assistant'")
+        assert "role" in result["error"]
         # And the tool name that got blocked is update_draft_field
         assert tool_results[0]["name"] == "update_draft_field"
     finally:

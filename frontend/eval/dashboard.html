@@ -60,6 +60,68 @@
     .kpi-label { font-size: .75rem; color: var(--gray-500); margin-top: .2rem; }
     .trend-chart { height: 60px; display: flex; align-items: flex-end; gap: 3px; margin-top: .5rem; }
     .trend-bar { flex: 1; border-radius: 3px 3px 0 0; min-width: 8px; transition: height .3s ease; }
+    .kpi-detail { font-size: .72rem; color: var(--gray-500); margin-top: .35rem; line-height: 1.45; }
+
+    /* ── Overview signal panels ─────────────────── */
+    .overview-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: .75rem; margin-bottom: 1rem;
+    }
+    .overview-focus-grid {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: .85rem; margin-bottom: 1rem;
+    }
+    .overview-focus-card {
+      min-height: 156px; background: var(--gray-0); border: 1px solid var(--gray-200);
+      border-radius: 8px; padding: 1rem; box-shadow: var(--shadow-sm);
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .overview-focus-card.good { border-top: 3px solid #16a34a; }
+    .overview-focus-card.medium { border-top: 3px solid #d97706; }
+    .overview-focus-card.high { border-top: 3px solid #dc2626; }
+    .overview-focus-kicker {
+      color: var(--gray-500); font-size: .72rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .02em;
+    }
+    .overview-focus-title { margin-top: .45rem; color: var(--gray-900); font-size: 1.05rem; font-weight: 900; }
+    .overview-focus-desc { margin-top: .35rem; color: var(--gray-600); font-size: .78rem; line-height: 1.55; }
+    .overview-focus-meta { margin-top: .75rem; color: var(--gray-500); font-size: .72rem; line-height: 1.45; }
+    .overview-action-primary { display: flex; flex-direction: column; gap: .6rem; }
+    .overview-action-primary .btn { align-self: flex-start; }
+    .overview-disclosure {
+      background: var(--gray-0); border: 1px solid var(--gray-200); border-radius: 8px;
+      box-shadow: var(--shadow-sm); margin-bottom: 1rem; overflow: hidden;
+    }
+    .overview-disclosure summary {
+      cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 1rem;
+      padding: .85rem 1rem; color: var(--gray-900); font-size: .85rem; font-weight: 800;
+    }
+    .overview-disclosure summary::-webkit-details-marker { display: none; }
+    .overview-disclosure summary::after { content: "展开"; color: var(--gray-500); font-size: .72rem; font-weight: 700; }
+    .overview-disclosure[open] summary::after { content: "收起"; }
+    .overview-disclosure-subtitle { color: var(--gray-500); font-size: .72rem; font-weight: 600; }
+    .overview-disclosure-body { border-top: 1px solid var(--gray-200); padding: 1rem; }
+    .overview-action-card {
+      background: var(--gray-0); border: 1px solid var(--gray-200); border-radius: 8px;
+      padding: .85rem .95rem; box-shadow: var(--shadow-sm);
+    }
+    .overview-action-card.high { border-left: 3px solid #dc2626; }
+    .overview-action-card.medium { border-left: 3px solid #d97706; }
+    .overview-action-card.good { border-left: 3px solid #16a34a; }
+    .overview-action-title { font-weight: 800; font-size: .84rem; color: var(--gray-900); }
+    .overview-action-desc { font-size: .74rem; color: var(--gray-500); line-height: 1.5; margin-top: .25rem; }
+    .overview-mini-note { font-size: .74rem; color: var(--gray-500); line-height: 1.5; margin: .35rem 0 .75rem; }
+    .overview-two-col {
+      display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+      gap: 1rem; align-items: start;
+    }
+    .overview-risk-high { color: #dc2626; font-weight: 800; }
+    .overview-risk-medium { color: #d97706; font-weight: 800; }
+    .overview-risk-good { color: #16a34a; font-weight: 800; }
+    @media (max-width: 1100px) {
+      .overview-two-col { grid-template-columns: 1fr; }
+      .overview-focus-grid { grid-template-columns: 1fr; }
+    }
 
     /* ── Table ────────────────────────────────────── */
     .eval-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
@@ -87,6 +149,135 @@
       overflow-x: auto; font-size: .75rem; color: var(--gray-900); max-height: 300px;
     }
     .empty-state { text-align: center; padding: 3rem; color: var(--gray-500); font-size: .9rem; }
+
+    .suite-badge {
+      display: inline-flex; flex-direction: column; gap: .08rem;
+      max-width: 260px; padding: .25rem .45rem; border-radius: 6px;
+      background: #eef2ff; color: #1d4ed8; border: 1px solid #dbeafe;
+      line-height: 1.25;
+    }
+    .suite-badge-name { font-weight: 700; font-size: .76rem; color: #1e40af; }
+    .suite-badge-key {
+      font-family: var(--mono); font-size: .64rem; color: #64748b;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .suite-help {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: .55rem; margin: 0 0 1rem;
+    }
+    .suite-help-card {
+      background: var(--gray-0); border: 1px solid var(--gray-200); border-radius: 8px;
+      padding: .65rem .75rem; box-shadow: var(--shadow-sm);
+    }
+    .suite-help-title { font-size: .8rem; font-weight: 800; color: var(--gray-900); }
+    .suite-help-desc { font-size: .72rem; color: var(--gray-500); margin-top: .18rem; line-height: 1.45; }
+    .suite-help-key {
+      display: inline-block; margin-top: .35rem; font-family: var(--mono); font-size: .65rem;
+      color: var(--gray-500); background: var(--gray-100); border-radius: 4px; padding: .08rem .35rem;
+    }
+
+    /* ── Agent Trace timeline ───────────────────── */
+    .at-timeline { position: relative; padding-left: 1.5rem; margin: .8rem 0; }
+    .at-timeline::before {
+      content: ''; position: absolute; left: .45rem; top: 0; bottom: 0;
+      width: 2px; background: var(--gray-200);
+    }
+    .at-step {
+      position: relative; margin-bottom: .6rem; font-size: .78rem;
+      padding: .5rem .7rem; background: var(--gray-0); border: 1px solid var(--gray-200);
+      border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .at-step::before {
+      content: ''; position: absolute; left: -1.25rem; top: .7rem;
+      width: 8px; height: 8px; border-radius: 50%; border: 2px solid var(--gray-300); background: var(--gray-0);
+    }
+    .at-step.at-call::before { border-color: #3b82f6; background: #dbeafe; }
+    .at-step.at-result::before { border-color: #16a34a; background: #dcfce7; }
+    .at-step.at-write::before { border-color: #d97706; background: #fef3c7; }
+    .at-step-header { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+    .at-badge {
+      font-size: .65rem; font-weight: 600; padding: .1rem .35rem; border-radius: 3px;
+      text-transform: uppercase; letter-spacing: .03em;
+    }
+    .at-badge-call { background: #dbeafe; color: #1d4ed8; }
+    .at-badge-result { background: #dcfce7; color: #15803d; }
+    .at-badge-write { background: #fef3c7; color: #b45309; }
+    .at-badge-subagent { background: var(--gray-100); color: var(--gray-700); font-weight: 500; }
+    .at-step-body { margin-top: .3rem; color: var(--gray-600); font-size: .72rem; }
+    .at-step-body pre {
+      background: var(--gray-50); padding: .4rem; border-radius: 4px; margin: .2rem 0 0;
+      overflow-x: auto; font-size: .7rem; max-height: 120px;
+    }
+    .at-summary-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: .6rem; margin-bottom: 1rem;
+    }
+    .at-summary-card {
+      background: var(--gray-0); border: 1px solid var(--gray-200); border-radius: 6px;
+      padding: .6rem .8rem; text-align: center;
+    }
+    .at-summary-card .val { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); }
+    .at-summary-card .lbl { font-size: .7rem; color: var(--gray-500); margin-top: .15rem; }
+    .at-meta-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: .55rem; margin-bottom: .9rem; font-size: .78rem;
+    }
+    .at-meta-item {
+      background: var(--gray-50); border: 1px solid var(--gray-200);
+      border-radius: 6px; padding: .45rem .55rem;
+    }
+    .at-meta-label {
+      display: block; color: var(--gray-500); font-size: .66rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .04em; margin-bottom: .12rem;
+    }
+    .at-detail-section {
+      border: 1px solid var(--gray-200); border-radius: 8px; background: var(--gray-0);
+      margin: .65rem 0; overflow: hidden;
+    }
+    .at-detail-section summary {
+      display: flex; align-items: center; justify-content: space-between; gap: .8rem;
+      padding: .65rem .75rem; cursor: pointer; list-style: none;
+      font-weight: 800; color: var(--gray-800); background: var(--gray-50);
+    }
+    .at-detail-section summary::-webkit-details-marker { display: none; }
+    .at-detail-section summary::after {
+      content: '展开'; font-size: .68rem; font-weight: 700; color: var(--gray-500);
+      border: 1px solid var(--gray-200); border-radius: 999px; padding: .12rem .45rem;
+      background: var(--gray-0);
+    }
+    .at-detail-section[open] summary::after { content: '收起'; }
+    .at-section-body { padding: .7rem .8rem; }
+    .at-section-hint {
+      color: var(--gray-500); font-size: .72rem; line-height: 1.45;
+      margin: -.15rem 0 .55rem;
+    }
+    .at-grader-row {
+      display: grid; grid-template-columns: 1.2rem minmax(130px, 210px) 1fr;
+      gap: .45rem; padding: .35rem 0; border-bottom: 1px solid var(--gray-100);
+      font-size: .75rem; align-items: start;
+    }
+    .at-grader-row:last-child { border-bottom: none; }
+    .at-grader-status-pass { color: #16a34a; font-weight: 800; }
+    .at-grader-status-fail { color: #dc2626; font-weight: 800; }
+    .at-grader-name { font-weight: 700; color: var(--gray-800); font-family: var(--mono); }
+    .at-grader-msg { color: var(--gray-600); overflow-wrap: anywhere; line-height: 1.45; }
+    .at-detail-actions { display: flex; justify-content: flex-end; margin-top: .8rem; }
+    .at-investigation-card {
+      display: flex; justify-content: space-between; gap: 1rem; align-items: center;
+      padding: .8rem .9rem; margin: 0 0 1rem; background: var(--gray-0);
+      border: 1px solid var(--gray-200); border-left: 3px solid #d97706;
+      border-radius: 8px; box-shadow: var(--shadow-sm);
+    }
+    .at-investigation-card.good { border-left-color: #16a34a; }
+    .at-investigation-card.high { border-left-color: #dc2626; }
+    .at-investigation-title { font-size: .86rem; font-weight: 900; color: var(--gray-900); }
+    .at-investigation-desc { margin-top: .22rem; font-size: .75rem; color: var(--gray-600); line-height: 1.45; }
+    .at-investigation-actions { display: flex; gap: .4rem; flex-wrap: wrap; justify-content: flex-end; }
+    .at-case-reason {
+      color: var(--gray-500); font-size: .72rem; margin-top: .22rem; line-height: 1.4;
+      max-width: 420px;
+    }
+    .at-case-risk { color: #dc2626; font-weight: 800; }
 
     /* ── Config form ─────────────────────────────── */
     .config-section { margin-bottom: 1.5rem; }
@@ -181,6 +372,96 @@
     .heval-detail { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: .7rem; margin: .4rem 0 .8rem; font-size: .78rem; }
     .heval-detail pre { background: var(--gray-100); padding: .5rem; border-radius: 4px; white-space: pre-wrap; word-break: break-all; font-size: .72rem; margin: .3rem 0; }
 
+    /* ── Review Quality guide ───────────────────── */
+    .review-guide {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: .75rem; margin: 0 0 1rem;
+    }
+    .review-guide-card {
+      background: var(--gray-0); border: 1px solid var(--gray-200); border-radius: 8px;
+      padding: .8rem .9rem; box-shadow: var(--shadow-sm);
+    }
+    .review-guide-title { font-size: .84rem; font-weight: 800; color: var(--gray-900); }
+    .review-guide-desc { font-size: .74rem; color: var(--gray-500); line-height: 1.5; margin-top: .25rem; }
+    .review-control-bar {
+      display: flex; align-items: flex-end; gap: .7rem; flex-wrap: wrap;
+      padding: .75rem .85rem; margin-bottom: 1rem;
+      background: var(--gray-0); border: 1px solid var(--gray-200);
+      border-radius: 8px; box-shadow: var(--shadow-sm);
+    }
+    .review-control-label {
+      display: block; font-size: .66rem; font-weight: 700; color: var(--gray-400);
+      text-transform: uppercase; letter-spacing: .04em; margin-bottom: .25rem;
+    }
+    .review-control-bar select {
+      min-height: 36px; padding: .4rem .6rem; border-radius: 6px;
+      border: 1px solid var(--gray-200); background: var(--gray-0);
+      color: var(--gray-900); font-size: .8rem; min-width: 280px;
+    }
+    .review-card-title {
+      font-size: .78rem; color: var(--gray-500); text-transform: uppercase;
+      letter-spacing: .05em; font-weight: 800;
+    }
+    .review-card-help {
+      margin-top: .25rem; font-size: .72rem; color: var(--gray-500); line-height: 1.45;
+    }
+    .review-inbox-row {
+      border-bottom: 1px solid var(--gray-200); padding: .8rem 1rem;
+      background: var(--gray-0);
+    }
+    .review-inbox-row.error { border-left: 3px solid #dc2626; }
+    .review-inbox-meta {
+      display: flex; justify-content: space-between; gap: .5rem; align-items: baseline; flex-wrap: wrap;
+    }
+    .review-inbox-preview {
+      font-size: .75rem; color: var(--gray-600); margin-top: .35rem;
+      font-family: ui-monospace, monospace; overflow-wrap: anywhere;
+    }
+    .review-case-link {
+      border: 0; background: none; color: var(--gray-900); cursor: pointer;
+      padding: 0; font: inherit; font-weight: 800; text-align: left;
+    }
+    .review-case-link:hover { color: var(--brand-dark); text-decoration: underline; }
+    .review-case-detail {
+      margin-top: .75rem; padding: .85rem; border: 1px solid var(--gray-200);
+      border-radius: 8px; background: var(--gray-50);
+    }
+    .review-case-detail-grid {
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: .75rem; margin-bottom: .75rem;
+    }
+    .review-case-detail-card {
+      background: var(--gray-0); border: 1px solid var(--gray-200);
+      border-radius: 8px; padding: .7rem .75rem;
+    }
+    .review-case-detail-title {
+      font-size: .74rem; font-weight: 800; color: var(--gray-700);
+      text-transform: uppercase; letter-spacing: .03em; margin-bottom: .35rem;
+    }
+    .review-case-detail-body {
+      font-size: .76rem; color: var(--gray-700); line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+    .review-case-detail pre {
+      background: var(--gray-100); padding: .55rem; border-radius: 6px;
+      white-space: pre-wrap; word-break: break-word; max-height: 220px;
+      overflow: auto; font-size: .72rem; margin: .3rem 0 0;
+    }
+    .review-inbox-actions {
+      margin-top: .6rem; display: grid; grid-template-columns: 9rem 13rem 1fr auto;
+      gap: .45rem; align-items: center;
+    }
+    .review-inbox-actions input,
+    .review-inbox-actions select {
+      font-size: .75rem; padding: .35rem .5rem; border-radius: 6px;
+      border: 1px solid var(--gray-200); background: var(--gray-0); color: var(--gray-900);
+    }
+    @media (max-width: 900px) {
+      .review-inbox-actions { grid-template-columns: 1fr; }
+      .review-case-detail-grid { grid-template-columns: 1fr; }
+      .review-control-bar select { min-width: 100%; }
+    }
+
     /* ── Metadata pills ──────────────────────────── */
     .meta-pills { display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0; }
     .meta-pill {
@@ -200,11 +481,148 @@
     .diff-val-new { color: #16a34a; font-weight: 600; }
 
     /* ── Compare selector ────────────────────────── */
-    .compare-bar {
-      display: flex; align-items: center; gap: .6rem; margin-bottom: 1rem;
-      padding: .6rem .8rem; background: var(--gray-100); border-radius: 6px; font-size: .78rem;
+    .compare-tabs {
+      display: flex; gap: .45rem; flex-wrap: wrap; margin-bottom: .65rem;
     }
-    .compare-bar select { padding: .3rem .5rem; border-radius: 4px; border: 1px solid var(--gray-200); font-size: .78rem; }
+    .compare-tab {
+      border: 1px solid var(--gray-200); background: var(--gray-0); color: var(--gray-700);
+      border-radius: 6px; padding: .45rem .7rem; font-size: .78rem; font-weight: 800;
+      cursor: pointer;
+    }
+    .compare-tab:hover { border-color: var(--brand); color: var(--gray-900); }
+    .compare-tab.active {
+      border-color: var(--brand); color: #047857; background: #ecfdf5;
+      box-shadow: 0 0 0 2px rgba(16,185,129,.08);
+    }
+    .compare-question {
+      display: flex; align-items: center; justify-content: space-between; gap: .9rem;
+      padding: .75rem .85rem; background: var(--gray-0); border: 1px solid var(--gray-200);
+      border-radius: 8px; box-shadow: var(--shadow-sm); margin-bottom: 1rem;
+    }
+    .compare-question-title { font-size: .86rem; font-weight: 900; color: var(--gray-900); }
+    .compare-question-help { margin-top: .2rem; font-size: .74rem; color: var(--gray-500); line-height: 1.45; }
+    .compare-bar {
+      display: grid; grid-template-columns: minmax(240px, 1fr) auto minmax(240px, 1fr) auto;
+      align-items: end; gap: .75rem; margin-top: .75rem;
+      padding: .75rem .85rem; background: var(--gray-0); border: 1px solid var(--gray-200);
+      border-radius: 8px; box-shadow: var(--shadow-sm); font-size: .78rem;
+    }
+    .compare-field { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+    .compare-field label {
+      font-size: .66rem; font-weight: 800; color: var(--gray-400);
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .compare-field select {
+      min-height: 36px; padding: .4rem .55rem; border-radius: 6px;
+      border: 1px solid var(--gray-200); background: var(--gray-0);
+      color: var(--gray-900); font-size: .78rem; width: 100%;
+    }
+    .compare-direction {
+      align-self: center; color: var(--gray-400); font-weight: 800; padding: 0 .1rem;
+    }
+    .compare-hint {
+      color: var(--gray-500); font-size: .78rem; line-height: 1.55; margin-top: .25rem;
+    }
+    .compare-note {
+      background: #f8fafc; border: 1px solid var(--gray-200); border-left: 3px solid var(--brand);
+      border-radius: 8px; padding: .7rem .8rem; color: var(--gray-600);
+      font-size: .78rem; line-height: 1.55; margin: .35rem 0 .85rem;
+    }
+    .compare-note strong { color: var(--gray-900); }
+    .compare-warning {
+      background: #fffbeb; border: 1px solid #fde68a; border-left: 3px solid #d97706;
+      border-radius: 8px; padding: .7rem .8rem; color: #92400e;
+      font-size: .78rem; line-height: 1.55; margin: .35rem 0 .85rem;
+    }
+    .compare-warning strong { color: #78350f; }
+    .compare-result-header {
+      display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start;
+      flex-wrap: wrap; margin-bottom: .85rem;
+    }
+    .compare-stat-row { display: flex; gap: .45rem; flex-wrap: wrap; font-size: .78rem; }
+    .compare-stat {
+      display: inline-flex; gap: .25rem; align-items: center;
+      padding: .25rem .5rem; border-radius: 6px; background: var(--gray-100);
+      color: var(--gray-700); border: 1px solid var(--gray-200);
+    }
+    .compare-empty-detail {
+      padding: .75rem .8rem; border-radius: 8px; background: var(--gray-50);
+      border: 1px dashed var(--gray-200); color: var(--gray-500); font-size: .78rem;
+    }
+    .compare-mode-section { margin-bottom: 1rem; }
+    .compare-mode-section .page-filter-bar { margin-bottom: 0; }
+    .compare-model-result {
+      margin-top: .75rem; border: 1px solid var(--gray-200); border-radius: 8px;
+      background: var(--gray-0); overflow: hidden;
+    }
+    .compare-model-result-header {
+      padding: .65rem .8rem; background: var(--gray-50); border-bottom: 1px solid var(--gray-200);
+      font-weight: 800; font-size: .82rem; color: var(--gray-800);
+    }
+    .compare-verdict {
+      border-radius: 8px; border: 1px solid var(--gray-200); padding: .75rem .85rem;
+      background: var(--gray-50); margin-bottom: .8rem;
+    }
+    .compare-verdict.good { border-left: 3px solid #16a34a; }
+    .compare-verdict.bad { border-left: 3px solid #dc2626; }
+    .compare-verdict.neutral { border-left: 3px solid #d97706; }
+    .compare-verdict-title { font-size: .86rem; font-weight: 900; color: var(--gray-900); }
+    .compare-verdict-body { margin-top: .25rem; font-size: .76rem; color: var(--gray-600); line-height: 1.5; }
+    .case-matrix-toolbar {
+      display:flex; gap:.45rem; flex-wrap:wrap; align-items:center;
+      padding:.65rem .8rem; background:var(--gray-50); border-top:1px solid var(--gray-200);
+      border-bottom:1px solid var(--gray-200);
+    }
+    .case-matrix-filter {
+      border:1px solid var(--gray-200); background:white; color:var(--gray-600);
+      border-radius:999px; padding:.25rem .55rem; font-size:.72rem; font-weight:800;
+      cursor:pointer;
+    }
+    .case-matrix-filter.active { border-color:var(--brand); color:#047857; background:#ecfdf5; }
+    .case-matrix-table td { vertical-align:top; }
+    .case-model-cell {
+      min-width:160px; display:grid; gap:.2rem; color:var(--gray-600); font-size:.72rem;
+    }
+    .case-model-cell .cell-top { display:flex; gap:.35rem; align-items:center; flex-wrap:wrap; }
+    .case-model-cell .cell-meta { color:var(--gray-500); line-height:1.35; }
+    .case-model-cell .cell-tools {
+      max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .case-compare-action {
+      border:1px solid var(--gray-200); background:white; color:var(--gray-700);
+      border-radius:6px; padding:.32rem .55rem; font-size:.72rem; font-weight:800; cursor:pointer;
+    }
+    .case-compare-action:hover { border-color:var(--brand); color:#047857; }
+    .case-compare-detail {
+      margin-top:.85rem; border:1px solid var(--gray-200); border-radius:8px;
+      background:white; box-shadow:var(--shadow-sm); overflow:hidden;
+    }
+    .case-compare-detail-header {
+      display:flex; justify-content:space-between; gap:1rem; align-items:flex-start;
+      padding:.8rem .9rem; background:var(--gray-50); border-bottom:1px solid var(--gray-200);
+    }
+    .case-compare-detail-title { font-size:.88rem; font-weight:900; color:var(--gray-900); }
+    .case-compare-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
+    .case-compare-panel { padding:.85rem; border-right:1px solid var(--gray-200); min-width:0; }
+    .case-compare-panel:last-child { border-right:0; }
+    .case-compare-panel-title { font-weight:900; color:var(--gray-900); margin-bottom:.45rem; }
+    .case-compare-section { margin-top:.7rem; }
+    .case-compare-section-label {
+      font-size:.68rem; font-weight:900; color:var(--gray-400);
+      text-transform:uppercase; letter-spacing:.04em; margin-bottom:.25rem;
+    }
+    .case-compare-section pre {
+      max-height:220px; overflow:auto; background:var(--gray-50); border:1px solid var(--gray-200);
+      border-radius:6px; padding:.55rem; font-size:.72rem; line-height:1.45;
+    }
+    @media (max-width: 980px) {
+      .compare-bar { grid-template-columns: 1fr; }
+      .compare-direction { display: none; }
+      .case-compare-detail-grid { grid-template-columns:1fr; }
+      .case-compare-panel { border-right:0; border-bottom:1px solid var(--gray-200); }
+      .case-compare-panel:last-child { border-bottom:0; }
+    }
 
     /* ── Prompt Lab ──────────────────────────────── */
     .prompt-list { display: grid; gap: .8rem; margin-bottom: 1rem; }
@@ -256,6 +674,41 @@
       color: var(--gray-900); font-size: .78rem;
     }
 
+    .page-filter-bar {
+      display: flex; align-items: flex-end; gap: .7rem; flex-wrap: wrap;
+      padding: .75rem .85rem; margin: 0 0 1rem;
+      background: var(--gray-0); border: 1px solid var(--gray-200);
+      border-radius: 8px; box-shadow: var(--shadow-sm);
+    }
+    .page-filter-title {
+      align-self: center; font-size: .78rem; font-weight: 800;
+      color: var(--gray-800); margin-right: .2rem;
+    }
+    .page-filter {
+      display: flex; flex-direction: column; gap: .25rem;
+      min-width: 150px;
+    }
+    .page-filter.wide { min-width: 230px; }
+    .page-filter label {
+      font-size: .66rem; font-weight: 700; color: var(--gray-400);
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .page-filter select {
+      min-height: 34px; padding: .36rem .55rem; border-radius: 6px;
+      border: 1px solid var(--gray-200); background: var(--gray-0);
+      color: var(--gray-900); font-size: .78rem;
+    }
+    .page-filter input[type="date"] {
+      min-height: 34px; padding: .34rem .5rem; border-radius: 6px;
+      border: 1px solid var(--gray-200); background: var(--gray-0);
+      color: var(--gray-900); font-size: .78rem; box-sizing: border-box;
+    }
+    .page-filter-range {
+      display: flex; align-items: center; gap: .35rem;
+    }
+    .page-filter-range input { width: 140px; }
+    .page-filter-range span { color: var(--gray-400); font-size: .75rem; }
+
     /* ── Run Eval modal ─────────────────────────── */
     .eval-modal-backdrop {
       position: fixed; inset: 0; background: rgba(15, 23, 42, .35);
@@ -294,6 +747,13 @@
     .eval-choice-name { font-weight: 600; }
     .eval-choice input { margin: 0; }
     .eval-model-count { margin-top: .4rem; font-size: .72rem; color: var(--gray-500); }
+    .eval-dataset-list { margin-top:.5rem; border:1px solid var(--gray-200); border-radius:8px; overflow:hidden; background:white; }
+    .eval-dataset-desc { display:block; margin-top:.18rem; color:var(--gray-500); font-size:.72rem; line-height:1.35; font-weight:500; }
+    .baseline-badge {
+      display:inline-flex; align-items:center; margin-left:.4rem; padding:.1rem .38rem;
+      border-radius:999px; background:#dcfce7; color:#166534; font-size:.66rem;
+      font-weight:800; letter-spacing:.02em; text-transform:uppercase;
+    }
     .eval-modal-actions { display:flex; justify-content:flex-end; gap:.6rem; margin-top:1.1rem; }
   </style>
 </head>
@@ -331,9 +791,10 @@
 
     <div style="margin-top:1rem;">
       <div style="font-weight:700; font-size:.85rem; color:var(--gray-800)">2. Datasets</div>
-      <div class="empty-state" style="padding:1rem; margin-top:.5rem; border:1px dashed var(--gray-200); border-radius:8px;">
-        Dataset picker is reserved for the next iteration. Current run uses the default unified expense assistant eval suite.
+      <div id="run-eval-datasets" class="eval-dataset-list">
+        <div class="empty-state" style="padding:1rem;">Loading datasets...</div>
       </div>
+      <div class="eval-model-count" id="run-eval-dataset-count">No dataset selected = full unified suite</div>
     </div>
 
     <div class="eval-modal-actions">
@@ -382,51 +843,14 @@
       <button class="sidebar-nav-item" onclick="switchTab('traces', this)">
         <span class="icon">&#9776;</span> LLM Traces
       </button>
+      <button class="sidebar-nav-item" onclick="switchTab('agent-traces', this)">
+        <span class="icon">&#10070;</span> Agent Trace
+      </button>
       <button class="sidebar-nav-item" onclick="switchTab('review', this)">
         <span class="icon">&#9745;</span> Review Quality
       </button>
     </div>
 
-    <!-- Trace filters (only visible on traces tab) -->
-    <div id="trace-filters" style="display:none">
-      <div class="sidebar-divider"></div>
-      <div class="sidebar-section">
-        <div class="sidebar-section-title">Trace Filters</div>
-      </div>
-      <div class="sidebar-filter">
-        <label>Component</label>
-        <select id="filter-component" onchange="loadTraces()">
-          <option value="">All</option>
-          <option value="fraud_llm_analyzer">Fraud LLM</option>
-          <option value="ambiguity_detector">Ambiguity</option>
-          <option value="ocr">OCR</option>
-          <option value="chat_expense_assistant,chat_manager_explain">Unified Expense Assistant</option>
-        </select>
-      </div>
-      <div class="sidebar-filter">
-        <label>Status</label>
-        <select id="filter-error" onchange="loadTraces()">
-          <option value="">All</option>
-          <option value="false">Success</option>
-          <option value="true">Error</option>
-        </select>
-      </div>
-      <div class="sidebar-filter">
-        <label>Sort By</label>
-        <select id="sort-field" onchange="loadTraces()">
-          <option value="created_at">Time</option>
-          <option value="latency_ms">Latency</option>
-          <option value="component">Component</option>
-        </select>
-      </div>
-      <div class="sidebar-filter">
-        <label>Order</label>
-        <select id="sort-order" onchange="loadTraces()">
-          <option value="desc">Newest first</option>
-          <option value="asc">Oldest first</option>
-        </select>
-      </div>
-    </div>
   </aside>
 
   <!-- Main content -->
@@ -436,63 +860,75 @@
     <div id="tab-overview">
       <div class="eval-main-header">
         <h1>Eval Overview</h1>
-        <div class="subtitle">AI Components Eval Dashboard</div>
+        <div class="subtitle">先看三个结论：这次 eval 是否可信、最大风险在哪里、下一步该点哪里。</div>
       </div>
-      <div class="kpi-row">
-        <div class="kpi-card"><div class="kpi-value" id="kpi-total-runs">--</div><div class="kpi-label">Total Runs</div></div>
-        <div class="kpi-card">
-          <div class="kpi-value" id="kpi-pass-rate">--</div><div class="kpi-label">Latest Pass Rate</div>
-          <div class="trend-chart" id="trend-chart"></div>
+      <div class="overview-focus-grid">
+        <div class="overview-focus-card" id="ov-trust-card">
+          <div>
+            <div class="overview-focus-kicker">1. 是否可信</div>
+            <div class="overview-focus-title" id="ov-trust-title">Loading...</div>
+            <div class="overview-focus-desc" id="ov-trust-body">正在读取最新 eval snapshot。</div>
+          </div>
+          <div class="overview-focus-meta" id="ov-trust-meta">dataset / run time</div>
         </div>
-        <div class="kpi-card"><div class="kpi-value" id="kpi-pass-delta">--</div><div class="kpi-label">Pass Rate Delta</div></div>
-        <div class="kpi-card"><div class="kpi-value" id="kpi-latest-cases">--</div><div class="kpi-label">Latest Total Cases</div></div>
+        <div class="overview-focus-card" id="ov-risk-card">
+          <div>
+            <div class="overview-focus-kicker">2. 最大风险</div>
+            <div class="overview-focus-title" id="ov-risk-title">Loading...</div>
+            <div class="overview-focus-desc" id="ov-risk-body">正在汇总 agent 决策和人工确认 backlog。</div>
+          </div>
+          <div class="overview-focus-meta" id="ov-risk-meta">PASS / FLAG / REJECT</div>
+        </div>
+        <div class="overview-focus-card" id="ov-next-card">
+          <div>
+            <div class="overview-focus-kicker">3. 下一步</div>
+            <div id="overview-actions"><div class="empty-state" style="padding:0">Loading...</div></div>
+          </div>
+        </div>
       </div>
 
-      <!-- ── Production AI funnel: how is tiering ACTUALLY behaving? ──
-           Inspired by Airwallex Spend AI's published 64% auto-approve
-           metric. Reads from the BUSINESS db (real submissions), not the
-           eval suite, so it's the production picture, not a synthetic one. -->
-      <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:.5rem">
-        <div style="font-weight:700; font-size:.95rem; color:var(--gray-700)">AI Auto-Approval Funnel (last 30 days)</div>
-        <div style="font-size:.72rem; color:var(--gray-400)">Live submissions · tier breakdown</div>
-      </div>
-      <div class="kpi-row" style="margin-bottom:1rem">
-        <div class="kpi-card">
-          <div class="kpi-value" id="kpi-auto-approve-rate" style="color:#16a34a">--</div>
-          <div class="kpi-label">Auto-Approved (T1+T2)</div>
-          <div id="kpi-auto-approve-count" style="font-size:.7rem; color:var(--gray-400); margin-top:.15rem">--</div>
+      <details class="overview-disclosure">
+        <summary>
+          <span>诊断细节</span>
+          <span class="overview-disclosure-subtitle" id="ov-diagnostics-summary">Suite 风险 / 待人工确认</span>
+        </summary>
+        <div class="overview-disclosure-body overview-two-col">
+          <div>
+            <div class="comp-section-title">Suite 风险榜</div>
+            <div class="overview-mini-note">只显示最需要看的 top 5。完整 case 去 Agent Trace 下钻。</div>
+            <div id="overview-suite-risk"><div class="empty-state">Loading...</div></div>
+          </div>
+          <div>
+            <div class="comp-section-title">待人工确认的高风险 case</div>
+            <div class="overview-mini-note">来自 Agent Trace 的 FLAG/REJECT/failed/mismatch/guardrail grader 失败 case。</div>
+            <div id="overview-review-cases"><div class="empty-state">Loading...</div></div>
+          </div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-value" id="kpi-human-review-rate" style="color:#d97706">--</div>
-          <div class="kpi-label">Human Review (T3)</div>
-          <div id="kpi-human-review-count" style="font-size:.7rem; color:var(--gray-400); margin-top:.15rem">--</div>
+      </details>
+
+      <details class="overview-disclosure">
+        <summary>
+          <span>对比是否成立</span>
+          <span class="overview-disclosure-subtitle" id="ov-compare-summary">LLM / Prompt / Dataset 可比性</span>
+        </summary>
+        <div class="overview-disclosure-body">
+          <div class="overview-mini-note">这里看的是“这次 eval 是否足够支持对比结论”。如果 metadata 缺失，Compare Runs 的归因也会不可靠。</div>
+          <div id="overview-compare-readiness"><div class="empty-state">Loading...</div></div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-value" id="kpi-rejection-rate" style="color:#dc2626">--</div>
-          <div class="kpi-label">Suggested Reject (T4)</div>
-          <div id="kpi-rejection-count" style="font-size:.7rem; color:var(--gray-400); margin-top:.15rem">--</div>
+      </details>
+
+      <details class="overview-disclosure">
+        <summary>
+          <span>最近的 eval runs</span>
+          <span class="overview-disclosure-subtitle" id="ov-runs-summary">最近 5 次</span>
+        </summary>
+        <div class="overview-disclosure-body">
+          <table class="eval-table">
+            <thead><tr><th>Time</th><th>Total</th><th>Passed</th><th>Pass Rate</th><th>Trigger</th><th>Actions</th></tr></thead>
+            <tbody id="overview-runs-body"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
+          </table>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-value" id="kpi-funnel-total">--</div>
-          <div class="kpi-label">Total Reviewed</div>
-          <div style="font-size:.7rem; color:var(--gray-400); margin-top:.15rem">last 30 d</div>
-        </div>
-      </div>
-      <div class="comp-section">
-        <div class="comp-section-title">Unified Expense Assistant Model Matrix</div>
-        <div id="chatbot-model-matrix"><div class="empty-state">Loading...</div></div>
-      </div>
-      <div class="comp-section">
-        <div class="comp-section-title">Per-Component Detection Quality (Latest Run)</div>
-        <div id="overview-metrics-table"><div class="empty-state">Loading...</div></div>
-      </div>
-      <div class="comp-section">
-        <div class="comp-section-title">Recent Eval Runs</div>
-        <table class="eval-table">
-          <thead><tr><th>Time</th><th>Total</th><th>Passed</th><th>Pass Rate</th><th>Trigger</th><th>Actions</th></tr></thead>
-          <tbody id="overview-runs-body"><tr><td colspan="6" class="empty-state">Loading...</td></tr></tbody>
-        </table>
-      </div>
+      </details>
     </div>
 
     <!-- ═══ Component Tabs (generated dynamically) ═══ -->
@@ -505,20 +941,72 @@
     <div id="tab-compare" style="display:none">
       <div class="eval-main-header">
         <h1>Compare Runs</h1>
-        <div class="subtitle">Compare metadata, P/R/F1, case results, and LLM model-matrix runs</div>
+        <div class="subtitle">先选一个比较问题，再选 A 和 B。页面只回答一件事：B 相比 A 有没有退步。</div>
       </div>
-      <div class="comp-section">
-        <div class="comp-section-title">Latest LLM Comparison</div>
-        <div id="compare-llm-matrix"><div class="empty-state">Loading...</div></div>
+      <div class="compare-mode-section">
+        <select id="compare-dimension" onchange="updateCompareMode()" style="display:none">
+          <option value="llm">llm</option>
+          <option value="prompt">prompt</option>
+          <option value="dataset">dataset</option>
+          <option value="run">run</option>
+        </select>
+        <div class="compare-question">
+          <div>
+            <div class="compare-question-title">你这次想比较什么？</div>
+            <div class="compare-question-help" id="compare-dimension-help">同一批 case 下比较两个模型，固定数据集、prompt 和工具规则，只看模型差异。</div>
+          </div>
+          <div class="compare-tabs" role="tablist" aria-label="Compare dimension">
+            <button class="compare-tab active" data-compare-mode="llm" onclick="setCompareMode('llm')">按 LLM 比</button>
+            <button class="compare-tab" data-compare-mode="prompt" onclick="setCompareMode('prompt')">按 Prompt 比</button>
+            <button class="compare-tab" data-compare-mode="dataset" onclick="setCompareMode('dataset')">按 Dataset 比</button>
+            <button class="compare-tab" data-compare-mode="run" onclick="setCompareMode('run')">任意 Run 比</button>
+          </div>
+        </div>
       </div>
-      <div class="compare-bar">
-        <strong>Run A:</strong>
-        <select id="compare-a"></select>
-        <strong style="margin-left:.5rem">Run B:</strong>
-        <select id="compare-b"></select>
-        <button class="btn-save btn-primary" onclick="runDiff()" style="margin-left:.5rem">Compare</button>
+
+      <div class="comp-section" id="compare-value-section">
+        <div class="comp-section-title" id="compare-value-title">LLM A vs LLM B</div>
+        <div class="compare-hint" id="compare-value-help">选择两个 LLM，在同一批 eval case 下比较质量、工具调用、延迟和成本。</div>
+        <div class="compare-bar">
+          <div class="compare-field">
+            <label id="compare-value-a-label">LLM A 基线</label>
+            <select id="compare-value-a"></select>
+          </div>
+          <div class="compare-direction">A → B</div>
+          <div class="compare-field">
+            <label id="compare-value-b-label">LLM B 实验</label>
+            <select id="compare-value-b"></select>
+          </div>
+          <button class="btn-save btn-primary" id="compare-value-button" onclick="runVariableCompare()">比较 LLM A → B</button>
+        </div>
       </div>
-      <div id="diff-result"></div>
+      <div class="comp-section" id="compare-run-section">
+        <div class="comp-section-title">Run A vs Run B 对比</div>
+        <div class="compare-hint" id="compare-run-help">用来回答一个非常具体的问题：这次换模型、改 prompt、改 tool policy 或换数据集之后，结果有没有变好或变坏？</div>
+        <div class="compare-bar">
+          <div class="compare-field">
+            <label id="compare-a-label">Run A 基线 / 旧版本</label>
+            <select id="compare-a"></select>
+          </div>
+          <div class="compare-direction">A → B</div>
+          <div class="compare-field">
+            <label id="compare-b-label">Run B 实验 / 新版本</label>
+            <select id="compare-b"></select>
+          </div>
+          <button class="btn-save btn-primary" onclick="runDiff()">比较 A → B</button>
+        </div>
+      </div>
+      <div id="diff-result"><div class="empty-state">选择两个不同的 run 后点击“比较 A → B”。</div></div>
+      <details class="overview-disclosure" id="compare-llm-section">
+        <summary>
+          <span>最近一次模型汇总</span>
+          <span class="overview-disclosure-subtitle">可选细节</span>
+        </summary>
+        <div class="overview-disclosure-body">
+          <div class="compare-hint">这里展示最近一次 model-matrix 的 By Model 汇总。suite 细分请去 Agent Trace 看。</div>
+          <div id="compare-llm-matrix"><div class="empty-state">Loading...</div></div>
+        </div>
+      </details>
     </div>
 
     <!-- ═══ Traces Tab ═══ -->
@@ -527,12 +1015,106 @@
         <h1>LLM Traces</h1>
         <div class="subtitle">Raw LLM call logs across all components</div>
       </div>
+      <div id="trace-filters" class="page-filter-bar" style="display:none">
+        <div class="page-filter-title">Filters</div>
+        <div class="page-filter wide">
+          <label>Component</label>
+          <select id="filter-component" onchange="loadTraces()">
+            <option value="">All</option>
+            <option value="fraud_llm_analyzer">Fraud LLM</option>
+            <option value="ambiguity_detector">Ambiguity</option>
+            <option value="ocr">OCR</option>
+            <option value="chat_expense_assistant,chat_manager_explain">Unified Expense Assistant</option>
+          </select>
+        </div>
+        <div class="page-filter">
+          <label>Status</label>
+          <select id="filter-error" onchange="loadTraces()">
+            <option value="">All</option>
+            <option value="false">Success</option>
+            <option value="true">Error</option>
+          </select>
+        </div>
+        <div class="page-filter">
+          <label>Sort By</label>
+          <select id="sort-field" onchange="loadTraces()">
+            <option value="created_at">Time</option>
+            <option value="latency_ms">Latency</option>
+            <option value="component">Component</option>
+          </select>
+        </div>
+        <div class="page-filter">
+          <label>Order</label>
+          <select id="sort-order" onchange="loadTraces()">
+            <option value="desc">Newest first</option>
+            <option value="asc">Oldest first</option>
+          </select>
+        </div>
+      </div>
       <table class="eval-table">
         <thead><tr><th>Time</th><th>Component</th><th>Model</th><th>Latency</th><th>Tokens</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody id="traces-body"><tr><td colspan="7" class="empty-state">Loading...</td></tr></tbody>
       </table>
       <div id="traces-pagination" style="margin-top:.8rem; text-align:center; font-size:.8rem;"></div>
       <div id="trace-detail-panel"></div>
+    </div>
+
+    <!-- ═══ Agent Trace Tab ═══ -->
+    <div id="tab-agent-traces" style="display:none">
+      <div class="eval-main-header">
+        <h1>Agent Trace</h1>
+        <div class="subtitle">每个测试用例的 agent 路由、工具调用、最终判断和写入行为</div>
+      </div>
+      <div id="agent-trace-filters" class="page-filter-bar" style="display:none">
+        <div class="page-filter-title">Filters</div>
+        <div class="page-filter wide">
+          <label>测试组</label>
+          <select id="at-filter-suite" onchange="_renderAgentTraces()">
+            <option value="">All</option>
+          </select>
+        </div>
+        <div class="page-filter">
+          <label>Decision</label>
+          <select id="at-filter-decision" onchange="_renderAgentTraces()">
+            <option value="">All</option>
+            <option value="PASS">PASS</option>
+            <option value="FLAG_FOR_HUMAN">FLAG_FOR_HUMAN</option>
+            <option value="REJECT">REJECT</option>
+          </select>
+        </div>
+        <div class="page-filter">
+          <label>Status</label>
+          <select id="at-filter-status" onchange="_renderAgentTraces()">
+            <option value="">All</option>
+            <option value="passed">Passed</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+        <div class="page-filter">
+          <label>日期范围</label>
+          <div class="page-filter-range">
+            <input id="at-filter-date-from" type="date" onchange="_renderAgentTraces()" aria-label="Agent trace start date">
+            <span>to</span>
+            <input id="at-filter-date-to" type="date" onchange="_renderAgentTraces()" aria-label="Agent trace end date">
+          </div>
+        </div>
+      </div>
+      <div id="at-summary"></div>
+      <div id="at-investigation-guide"></div>
+      <details class="overview-disclosure" id="at-suite-guide-details">
+        <summary>
+          <span>测试组说明</span>
+          <span class="overview-disclosure-subtitle">每个 suite 到底在测什么</span>
+        </summary>
+        <div class="overview-disclosure-body" id="at-suite-guide"></div>
+      </details>
+      <table class="eval-table">
+        <thead><tr>
+          <th>Case</th><th>测试组</th><th>Subagents</th><th>Tools</th><th>Decision</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="at-body"><tr><td colspan="7" class="empty-state">Loading...</td></tr></tbody>
+      </table>
+      <div id="at-detail-panel"></div>
     </div>
 
     <!-- ═══ Review Quality Tab (Hamel "always be looking at data") ═══ -->
@@ -548,39 +1130,61 @@
       <div class="eval-main-header">
         <h1>Review Quality</h1>
         <div class="subtitle">
-          Trace review inbox · LLM judge agreement (κ) · Saturation tracking.
-          Hamel: "always be looking at data."
+          检查评测系统自己靠不靠谱：人工抽查 trace、校准自动判断、看问题类型是否收敛。
+        </div>
+      </div>
+
+      <div class="review-guide">
+        <div class="review-guide-card">
+          <div class="review-guide-title">1. 人工看几条 trace</div>
+          <div class="review-guide-desc">先抽查失败、高风险或新增 case，判断自动 grader 有没有误判。</div>
+        </div>
+        <div class="review-guide-card">
+          <div class="review-guide-title">2. 给 trace 打标签</div>
+          <div class="review-guide-desc">标成正确、误报、漏报、幻觉或其他问题，后面才能知道 eval 哪里不可靠。</div>
+        </div>
+        <div class="review-guide-card">
+          <div class="review-guide-title">3. 看自动判断是否可信</div>
+          <div class="review-guide-desc">如果用了 LLM judge，就用这里对比它和人工判断是否一致。</div>
         </div>
       </div>
 
       <!-- Component picker — drives both saturation card + inbox -->
-      <div style="display:flex; align-items:center; gap:.8rem; margin-bottom:1rem;">
-        <label style="font-size:.85rem; color:var(--gray-700); font-weight:600;">Component:</label>
-        <select id="review-component" onchange="loadReviewTab()" style="padding:.4rem .7rem; font-size:.85rem;">
-          <option value="ambiguity_detector">ambiguity_detector</option>
-          <option value="fraud_llm_analyzer">fraud_llm_analyzer</option>
-          <option value="fraud_investigator">fraud_investigator (OODA)</option>
-          <option value="ocr">ocr</option>
-          <option value="chat_expense_assistant">chat_expense_assistant</option>
-          <option value="chat_manager_explain">chat_manager_explain</option>
-        </select>
+      <div class="review-control-bar">
+        <div>
+          <label class="review-control-label">审核对象</label>
+          <select id="review-source" onchange="loadReviewTab()">
+            <option value="agent_cases">Agent Case Review - 报销助手高风险 case</option>
+            <option value="llm_calls">LLM Call Review - 底层模型调用日志</option>
+          </select>
+        </div>
+        <div id="review-llm-component-control" style="display:none">
+          <label class="review-control-label">选择要抽查的模块</label>
+          <select id="review-component" onchange="loadReviewTab()">
+            <option value="ambiguity_detector">Ambiguity Detector - 模糊/不确定性判断</option>
+            <option value="fraud_llm_analyzer">Fraud LLM - 风险规则解释</option>
+            <option value="fraud_investigator">Fraud Investigator - OODA 调查链路</option>
+            <option value="ocr">OCR - 发票识别</option>
+            <option value="chat_expense_assistant">Expense Assistant - 员工报销助手</option>
+            <option value="chat_manager_explain">Manager Explain - 审批解释</option>
+          </select>
+        </div>
         <button class="btn btn-outline btn-sm" onclick="loadReviewTab()">Refresh</button>
+        <div id="review-source-note" style="font-size:.74rem; color:var(--gray-500); line-height:1.45; flex:1; min-width:240px;"></div>
       </div>
 
       <!-- Row of two cards: Judge κ (B1 snapshot) + Saturation (B2 endpoint) -->
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1.2rem;">
         <div class="kpi-card" id="review-kappa-card">
-          <div style="font-size:.75rem; color:var(--gray-500); text-transform:uppercase; letter-spacing:.05em;">
-            Judge ↔ Human (κ)
-          </div>
+          <div id="review-left-card-title" class="review-card-title">自动判断 vs 人工判断</div>
+          <div id="review-left-card-help" class="review-card-help">用来回答：如果让 LLM judge 或自动 grader 判分，它和人的判断一致吗？</div>
           <div id="review-kappa-body" style="margin-top:.5rem;">
             <span class="empty-state">Loading…</span>
           </div>
         </div>
         <div class="kpi-card" id="review-saturation-card">
-          <div style="font-size:.75rem; color:var(--gray-500); text-transform:uppercase; letter-spacing:.05em;">
-            Saturation
-          </div>
+          <div id="review-right-card-title" class="review-card-title">人工审核覆盖率</div>
+          <div id="review-right-card-help" class="review-card-help">用来回答：这个模块的 trace 你已经看过多少，还剩多少没看？</div>
           <div id="review-saturation-body" style="margin-top:.5rem;">
             <span class="empty-state">Loading…</span>
           </div>
@@ -589,7 +1193,7 @@
 
       <!-- Inbox: unreviewed traces -->
       <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:.5rem;">
-        <h3 style="margin:0; font-size:1rem;">Unreviewed traces (inbox)</h3>
+        <h3 id="review-inbox-title" style="margin:0; font-size:1rem;">待人工确认的 traces</h3>
         <span id="review-inbox-count" style="font-size:.8rem; color:var(--gray-500);"></span>
       </div>
       <div id="review-inbox" class="eval-table" style="display:block; padding:0;">
@@ -608,16 +1212,110 @@ let latestRun = null;
 let currentPromptKey = null;
 let currentPromptVersion = null;
 let pendingRunEvalCompKey = null;
+let compareMatrixData = null;
+let chatbotDatasetOptions = null;
+let compareCaseRows = [];
+let compareCaseFilter = "all";
+let compareCaseModels = { a: "", b: "" };
+
+const DEFAULT_COMPARE_LLMS = ["GPT-4o-mini", "DeepSeek V4 Pro"];
+const DEFAULT_COMPARE_DATASET_ID = "all_scenarios1";
+const MODEL_COMPARE_ALIASES = {
+  "GPT-4o-mini": ["GPT-4o-mini", "OpenAI-4o-mini", "gpt-4o-mini"],
+  "DeepSeek V4 Pro": ["DeepSeek V4 Pro", "Deepseek V4 Pro", "Deepseek V4", "deepseek-v4-pro"],
+};
 
 const RUN_EVAL_MODELS = [
-  "OpenAI-4o-mini",
-  "Deepseek V4",
+  "GPT-4o-mini",
+  "DeepSeek V4 Pro",
   "Qwen3-Max",
   "GLM-4.6",
   "Kimi K2.5",
   "Doubao Vision Pro (OCR)",
   "Qwen3-VL-Max (OCR)",
 ];
+
+const AGENT_SUITE_INFO = {
+  tier0_routing_regression: {
+    name: "入口分流",
+    desc: "判断用户是在问总额/预算/状态，还是要进入报销核对流程。"
+  },
+  policy_qa_regression: {
+    name: "政策问答",
+    desc: "只查报销政策，防止模型自己编规则或越权写草稿。"
+  },
+  receipt_reader_regression: {
+    name: "发票读取",
+    desc: "读取发票/OCR结果，处理模糊、缺字段和发票里的恶意指令。"
+  },
+  receipt_completion_regression: {
+    name: "补齐报销",
+    desc: "用户让助手补字段时，检查是否正确查证据、补草稿或停下来问人。"
+  },
+  evidence_reconciliation: {
+    name: "证据核对",
+    desc: "核对携程、滴滴、信用卡和政策；金额/日期/商户冲突时必须停。"
+  },
+  draft_write_guardrail: {
+    name: "写草稿护栏",
+    desc: "确认只有证据通过时才能写当前草稿，冲突或 trace 不完整时不能写。"
+  },
+  priority_5: {
+    name: "关键红线",
+    desc: "每次改模型、prompt 或 tool 后最先跑的 5-10 条核心安全用例。"
+  },
+  unified_expense_assistant_longtail: {
+    name: "长尾/安全",
+    desc: "低频但重要的边界情况，例如绕过规则、权限、安全和异常请求。"
+  }
+};
+
+function suiteInfo(suite) {
+  return AGENT_SUITE_INFO[suite] || { name: suite || "--", desc: "未归类的 eval suite。" };
+}
+
+function suiteLabel(suite) {
+  var info = suiteInfo(suite);
+  return info.name + (suite ? " (" + suite + ")" : "");
+}
+
+function suiteBadge(suite) {
+  var info = suiteInfo(suite);
+  return '<span class="suite-badge" title="' + esc(info.desc) + '">'
+    + '<span class="suite-badge-name">' + esc(info.name) + '</span>'
+    + '<span class="suite-badge-key">' + esc(suite || "--") + '</span>'
+    + '</span>';
+}
+
+function renderSuiteGuide(suites) {
+  var ordered = [
+    "tier0_routing_regression",
+    "policy_qa_regression",
+    "receipt_reader_regression",
+    "receipt_completion_regression",
+    "evidence_reconciliation",
+    "draft_write_guardrail",
+    "priority_5",
+    "unified_expense_assistant_longtail"
+  ];
+  var present = {};
+  (suites || []).forEach(function(s) { present[s] = true; });
+  var keys = ordered.filter(function(s) { return present[s]; });
+  Object.keys(present).sort().forEach(function(s) {
+    if (keys.indexOf(s) === -1) keys.push(s);
+  });
+  if (keys.length === 0) return "";
+  return '<div class="suite-help">'
+    + keys.map(function(s) {
+        var info = suiteInfo(s);
+        return '<div class="suite-help-card">'
+          + '<div class="suite-help-title">' + esc(info.name) + '</div>'
+          + '<div class="suite-help-desc">' + esc(info.desc) + '</div>'
+          + '<span class="suite-help-key">' + esc(s) + '</span>'
+          + '</div>';
+      }).join("")
+    + '</div>';
+}
 
 /* ── Component Definitions ───────────────────── */
 const COMP_DEFS = {
@@ -672,20 +1370,29 @@ const COMP_DEFS = {
 };
 
 /* ── Tab Switching ───────────────────────────── */
-const ALL_TABS = ["overview", "comp-fraud", "comp-ambiguity", "comp-ocr", "comp-chat", "compare", "traces", "review"];
+const ALL_TABS = ["overview", "comp-fraud", "comp-ambiguity", "comp-ocr", "comp-chat", "compare", "traces", "agent-traces", "review"];
 
 function switchTab(tab, btn) {
   document.querySelectorAll(".sidebar-nav-item").forEach(function(b) { b.classList.remove("active"); });
-  if (btn) btn.classList.add("active");
+  if (btn) {
+    btn.classList.add("active");
+  } else {
+    var fallbackBtn = Array.from(document.querySelectorAll(".sidebar-nav-item")).find(function(b) {
+      return (b.getAttribute("onclick") || "").indexOf("switchTab('" + tab + "'") >= 0;
+    });
+    if (fallbackBtn) fallbackBtn.classList.add("active");
+  }
   ALL_TABS.forEach(function(t) {
     var el = document.getElementById("tab-" + t);
     if (el) el.style.display = t === tab ? "" : "none";
   });
-  // Show trace filters only on traces tab
+  // Show filters only on their respective tabs
   document.getElementById("trace-filters").style.display = tab === "traces" ? "" : "none";
+  document.getElementById("agent-trace-filters").style.display = tab === "agent-traces" ? "" : "none";
 
   if (tab === "overview") loadOverview();
   if (tab === "traces") loadTraces();
+  if (tab === "agent-traces") loadAgentTraces();
   if (tab === "compare") loadCompareSelectors();
   if (tab === "review") loadReviewTab();
   if (tab.startsWith("comp-")) {
@@ -696,91 +1403,303 @@ function switchTab(tab, btn) {
 
 /* ── Overview ────────────────────────────────── */
 async function loadOverview() {
+  var matrix = null;
+  var reviewData = null;
   try {
-    // Load stats
-    var sr = await fetch(API + "/api/eval/stats");
-    var stats = await sr.json();
-    var trend = stats.trend || [];
-    document.getElementById("kpi-total-runs").textContent = trend.length;
-
-    if (trend.length > 0) {
-      var latest = trend[trend.length - 1];
-      var latestRate = latest.pass_rate != null ? latest.pass_rate : null;
-      document.getElementById("kpi-pass-rate").textContent =
-        latestRate != null ? (latestRate * 100).toFixed(0) + "%" : "--";
-
-      if (trend.length >= 2) {
-        var prev = trend[trend.length - 2];
-        if (latestRate != null && prev.pass_rate != null) {
-          var delta = ((latestRate - prev.pass_rate) * 100).toFixed(1);
-          var sign = delta > 0 ? "+" : "";
-          var el = document.getElementById("kpi-pass-delta");
-          el.textContent = sign + delta + "%";
-          el.style.color = delta > 0 ? "#16a34a" : delta < 0 ? "#dc2626" : "var(--gray-900)";
-        }
-      } else {
-        document.getElementById("kpi-pass-delta").textContent = "--";
-      }
-
-      // Trend chart
-      var chart = document.getElementById("trend-chart");
-      chart.innerHTML = "";
-      trend.forEach(function(t) {
-        var bar = document.createElement("div");
-        bar.className = "trend-bar";
-        var pct = (t.pass_rate || 0) * 100;
-        bar.style.height = Math.max(4, pct * 0.55) + "px";
-        bar.style.background = pct >= 80 ? "#16a34a" : pct >= 50 ? "#d97706" : "#dc2626";
-        bar.title = pct.toFixed(0) + "%";
-        chart.appendChild(bar);
-      });
-    }
-
-    // Load latest run for metrics + cases count
     var rr = await fetch(API + "/api/eval/runs?page=1&page_size=10");
     var rd = await rr.json();
     allRuns = rd.items || [];
-    if (allRuns.length > 0) {
-      latestRun = allRuns[0];
-      document.getElementById("kpi-latest-cases").textContent = latestRun.total_cases;
-      renderOverviewMetrics(latestRun);
-      renderOverviewRuns(allRuns);
-    }
+    latestRun = allRuns.length > 0 ? allRuns[0] : null;
+    renderOverviewRuns(allRuns);
   } catch (e) { console.error("loadOverview:", e); }
-
-  // ── AI auto-approval funnel KPIs (production data, not eval suite) ──
-  try {
-    var fr = await fetch(API + "/api/eval/auto-approval-rate?days=30");
-    var f = await fr.json();
-    var fmt = function(rate) { return (rate * 100).toFixed(1) + "%"; };
-    document.getElementById("kpi-funnel-total").textContent = f.total || 0;
-    document.getElementById("kpi-auto-approve-rate").textContent =
-      f.total > 0 ? fmt(f.auto_approve_rate) : "—";
-    document.getElementById("kpi-auto-approve-count").textContent =
-      "T1+T2: " + (f.auto_approve_count || 0) +
-      "  (T1=" + (f.by_tier?.T1 || 0) + ", T2=" + (f.by_tier?.T2 || 0) + ")";
-    document.getElementById("kpi-human-review-rate").textContent =
-      f.total > 0 ? fmt(f.human_review_rate) : "—";
-    document.getElementById("kpi-human-review-count").textContent =
-      "T3: " + (f.human_review_count || 0);
-    document.getElementById("kpi-rejection-rate").textContent =
-      f.total > 0 ? fmt(f.rejection_rate) : "—";
-    document.getElementById("kpi-rejection-count").textContent =
-      "T4: " + (f.rejection_count || 0);
-  } catch (e) { console.error("auto-approval-rate:", e); }
 
   try {
     var mr = await fetch(API + "/api/eval/chatbot/model-matrix");
-    var matrix = await mr.json();
-    renderChatbotModelMatrix(matrix, "chatbot-model-matrix");
-  } catch (e) {
-    console.error("chatbot-model-matrix:", e);
-    document.getElementById("chatbot-model-matrix").innerHTML =
-      '<div class="empty-state">Failed to load chatbot model matrix.</div>';
-  }
+    matrix = await mr.json();
+    compareMatrixData = matrix;
+  } catch (e) { console.error("overview model-matrix:", e); }
+
+  try {
+    var ar = await fetch(API + "/api/eval/agent-case-reviews?reviewed=false&page_size=8");
+    reviewData = await ar.json();
+  } catch (e) { console.error("overview agent-case-reviews:", e); }
+
+  renderOverviewKpis(matrix, reviewData);
+  renderOverviewActions(matrix, reviewData, allRuns);
+  renderOverviewSuiteRisk(matrix);
+  renderOverviewReviewCases(reviewData);
+  renderOverviewCompareReadiness(matrix, allRuns);
 }
 
-function renderChatbotModelMatrix(data, targetId) {
+function decisionCounts(results) {
+  var counts = { pass: 0, flag: 0, reject: 0, failed: 0, total: 0 };
+  (results || []).forEach(function(r) {
+    counts.total++;
+    if (r.passed === false) counts.failed++;
+    if (r.decision_label_actual === "PASS") counts.pass++;
+    else if (r.decision_label_actual === "FLAG_FOR_HUMAN") counts.flag++;
+    else if (r.decision_label_actual === "REJECT") counts.reject++;
+  });
+  return counts;
+}
+
+function modelCoverage(matrix) {
+  var covered = DEFAULT_COMPARE_LLMS.filter(function(model) {
+    return !!resolveCompareModelMetrics(model);
+  });
+  return { covered: covered, total: DEFAULT_COMPARE_LLMS.length };
+}
+
+function setOverviewFocusCard(cardId, level, title, body, meta) {
+  var card = document.getElementById(cardId);
+  if (!card) return;
+  card.className = "overview-focus-card " + level;
+  var titleEl = document.getElementById(cardId.replace("-card", "-title"));
+  var bodyEl = document.getElementById(cardId.replace("-card", "-body"));
+  var metaEl = document.getElementById(cardId.replace("-card", "-meta"));
+  if (titleEl) titleEl.textContent = title;
+  if (bodyEl) bodyEl.textContent = body;
+  if (metaEl) metaEl.textContent = meta;
+}
+
+function renderOverviewKpis(matrix, reviewData) {
+  var results = (matrix && matrix.results) || [];
+  var counts = decisionCounts(results);
+  var coverage = modelCoverage(matrix);
+  var totalCases = (matrix && matrix.total_cases) || results.length || "--";
+  var backlog = reviewData && reviewData.unreviewed != null ? reviewData.unreviewed : "--";
+  var reviewed = reviewData && reviewData.reviewed != null ? reviewData.reviewed : 0;
+  var high = ((reviewData && reviewData.items) || []).filter(function(i) { return i.review_priority === "high"; }).length;
+  var medium = ((reviewData && reviewData.items) || []).filter(function(i) { return i.review_priority === "medium"; }).length;
+
+  var snapshotMeta = matrix && !matrix.empty
+    ? (totalCases === "--" ? "unknown cases" : totalCases + " cases") + " · " + (matrix.dataset || "unknown dataset") + " · " + fmtTime(matrix.finished_at)
+    : "还没有 unified assistant eval snapshot";
+  if (!matrix || matrix.empty) {
+    setOverviewFocusCard(
+      "ov-trust-card",
+      "high",
+      "还没有可判断的结果",
+      "先跑一次 unified assistant eval。没有 snapshot 时，首页无法判断模型、prompt 或数据集是否可靠。",
+      snapshotMeta
+    );
+  } else if (coverage.covered.length < coverage.total) {
+    setOverviewFocusCard(
+      "ov-trust-card",
+      "high",
+      "模型对比还不成立",
+      "GPT-4o-mini 和 DeepSeek V4 Pro 没有同时出现在最新结果里。现在只能看单模型或 mock，不能下模型优劣结论。",
+      DEFAULT_COMPARE_LLMS.map(function(m) {
+        return (coverage.covered.indexOf(m) >= 0 ? "已有 " : "缺 ") + m;
+      }).join(" · ")
+    );
+  } else {
+    setOverviewFocusCard(
+      "ov-trust-card",
+      "good",
+      "当前 snapshot 可以看",
+      "核心模型都有结果，可以继续比较质量、工具调用、延迟和成本。对 prompt / dataset 的归因仍要看下方可比性。",
+      snapshotMeta
+    );
+  }
+
+  if (counts.reject > 0 || counts.failed > 0) {
+    setOverviewFocusCard(
+      "ov-risk-card",
+      "high",
+      "先看阻断 case",
+      "最新结果里有 REJECT 或 failed。先看 trace，确认是工具、prompt、fixture 还是 policy 边界的问题。",
+      "PASS " + counts.pass + " · FLAG " + counts.flag + " · REJECT " + counts.reject + " · failed " + counts.failed
+    );
+  } else if ((backlog && backlog !== "--") || counts.flag > 0) {
+    setOverviewFocusCard(
+      "ov-risk-card",
+      "medium",
+      "主要风险是人工确认",
+      "当前没有失败阻断，但仍有 FLAG 或待人工确认。先判断这些 case 是合理保守，还是误报太多。",
+      "待确认 " + backlog + " · high " + high + " · medium " + medium + " · reviewed " + reviewed
+    );
+  } else {
+    setOverviewFocusCard(
+      "ov-risk-card",
+      "good",
+      "暂无明显高风险",
+      "最新 snapshot 没有 REJECT、failed 或人工确认 backlog。可以继续加长尾 case 或做模型 A/B。",
+      "PASS " + counts.pass + " · FLAG " + counts.flag + " · REJECT " + counts.reject
+    );
+  }
+
+  var diag = document.getElementById("ov-diagnostics-summary");
+  if (diag) diag.textContent = "FLAG " + counts.flag + " / REJECT " + counts.reject + " / 待确认 " + backlog;
+}
+
+function renderOverviewActions(matrix, reviewData, runs) {
+  var results = (matrix && matrix.results) || [];
+  var counts = decisionCounts(results);
+  var coverage = modelCoverage(matrix);
+  var backlog = reviewData && reviewData.unreviewed != null ? reviewData.unreviewed : 0;
+  var actions = [];
+  if (coverage.covered.length < coverage.total) {
+    actions.push({
+      level: "high",
+      title: "先补真实 LLM 对比",
+      desc: "当前 GPT-4o-mini / DeepSeek V4 Pro 没有完整出现在最新 model-matrix。先在 Run Eval 同时选择这两个模型，否则 Compare Runs 只能看到 mock 或单模型结果。",
+      tab: "compare",
+      cta: "打开 Compare Runs"
+    });
+  }
+  if (backlog > 0) {
+    actions.push({
+      level: "medium",
+      title: "先审待人工确认 case",
+      desc: "还有 " + backlog + " 条 FLAG/REJECT/failed/mismatch case 没有人标注。先看 Review Quality，确认自动 grader 有没有误判。",
+      tab: "review",
+      cta: "打开 Review Quality"
+    });
+  }
+  if (counts.reject > 0 || counts.failed > 0) {
+    actions.push({
+      level: "high",
+      title: "检查 REJECT / failed case",
+      desc: "最新 eval 有 " + counts.reject + " 条 REJECT、" + counts.failed + " 条 failed。先看这些 case 的 trace，再决定是改 prompt、tool policy 还是 fixture。",
+      tab: "agent-traces",
+      cta: "打开 Agent Trace"
+    });
+  }
+  if (counts.flag > counts.pass && counts.total > 0) {
+    actions.push({
+      level: "medium",
+      title: "FLAG 比例偏高",
+      desc: "FLAG_FOR_HUMAN 多于 PASS，说明 agent 很保守。报销场景可以保守，但需要确认这些 FLAG 是否真的需要人工确认。",
+      tab: "agent-traces",
+      cta: "打开 Agent Trace"
+    });
+  }
+  if (actions.length === 0) {
+    actions.push({
+      level: "good",
+      title: "当前没有明显阻塞",
+      desc: "模型覆盖、人工确认和 case 决策分布没有明显红线。下一步可以跑新增长尾 case 或做模型成本对比。",
+      tab: "compare",
+      cta: "做模型对比"
+    });
+  }
+  var action = actions[0];
+  var nextCard = document.getElementById("ov-next-card");
+  if (nextCard) nextCard.className = "overview-focus-card " + action.level;
+  document.getElementById("overview-actions").innerHTML =
+    '<div class="overview-action-primary">'
+    + '<div><div class="overview-focus-title">' + esc(action.title) + '</div>'
+    + '<div class="overview-focus-desc">' + esc(action.desc) + '</div></div>'
+    + '<button class="btn btn-outline btn-sm" onclick="switchTab(\'' + action.tab + '\', null)">' + esc(action.cta) + '</button>'
+    + '</div>';
+}
+
+function renderOverviewSuiteRisk(matrix) {
+  var target = document.getElementById("overview-suite-risk");
+  var results = (matrix && matrix.results) || [];
+  if (!results.length) {
+    target.innerHTML = '<div class="empty-state">No agent eval cases yet.</div>';
+    return;
+  }
+  var grouped = {};
+  results.forEach(function(r) {
+    var suite = r.suite || "unknown";
+    if (!grouped[suite]) grouped[suite] = { suite: suite, total: 0, passed: 0, failed: 0, pass: 0, flag: 0, reject: 0, tools: 0 };
+    var g = grouped[suite];
+    g.total++;
+    if (r.passed) g.passed++; else g.failed++;
+    if (r.decision_label_actual === "PASS") g.pass++;
+    else if (r.decision_label_actual === "FLAG_FOR_HUMAN") g.flag++;
+    else if (r.decision_label_actual === "REJECT") g.reject++;
+    g.tools += (r.tool_calls || []).length;
+  });
+  var rows = Object.keys(grouped).map(function(k) {
+    var g = grouped[k];
+    g.pass_rate = g.total ? g.passed / g.total : 0;
+    g.avg_tools = g.total ? g.tools / g.total : 0;
+    g.risk = (g.failed * 5) + (g.reject * 4) + (g.flag * 2) + (g.avg_tools >= 5 ? 1 : 0);
+    return g;
+  }).sort(function(a, b) { return b.risk - a.risk || b.total - a.total; });
+  target.innerHTML = '<table class="eval-table">'
+    + '<thead><tr><th>Suite</th><th>Cases</th><th>Decision</th><th>Avg Tools</th><th>Risk</th></tr></thead><tbody>'
+    + rows.slice(0, 5).map(function(g) {
+      var riskLabel = g.failed || g.reject ? "高" : g.flag ? "中" : "低";
+      var riskCls = g.failed || g.reject ? "overview-risk-high" : g.flag ? "overview-risk-medium" : "overview-risk-good";
+      return "<tr>"
+        + "<td>" + suiteBadge(g.suite) + "</td>"
+        + "<td>" + g.passed + " / " + g.total + " pass</td>"
+        + "<td>PASS " + g.pass + " · FLAG " + g.flag + " · REJECT " + g.reject + "</td>"
+        + "<td>" + g.avg_tools.toFixed(2) + "</td>"
+        + '<td class="' + riskCls + '">' + riskLabel + "</td>"
+        + "</tr>";
+    }).join("")
+    + "</tbody></table>";
+}
+
+function renderOverviewReviewCases(reviewData) {
+  var target = document.getElementById("overview-review-cases");
+  var items = (reviewData && reviewData.items) || [];
+  if (!items.length) {
+    target.innerHTML = '<div class="empty-state">当前没有待人工确认的 agent cases。</div>';
+    return;
+  }
+  target.innerHTML = '<table class="eval-table">'
+    + '<thead><tr><th>Case</th><th>Priority</th><th>Why</th></tr></thead><tbody>'
+    + items.slice(0, 5).map(function(item) {
+      var cls = item.review_priority === "high" ? "badge-fail" : item.review_priority === "medium" ? "badge-changed" : "badge-neutral";
+      return "<tr>"
+        + "<td><div style=\"font-weight:700\">" + esc(item.case_id) + "</div><div style=\"margin-top:.25rem\">" + suiteBadge(item.suite) + "</div></td>"
+        + '<td><span class="badge ' + cls + '">' + esc(item.review_priority || "--") + '</span></td>'
+        + "<td>" + esc((item.review_reasons || []).slice(0, 3).join(", ") || "--") + "</td>"
+        + "</tr>";
+    }).join("")
+    + '</tbody></table><div class="overview-mini-note">完整标注入口在左侧 Review Quality。</div>';
+}
+
+function renderOverviewCompareReadiness(matrix, runs) {
+  var target = document.getElementById("overview-compare-readiness");
+  var models = DEFAULT_COMPARE_LLMS.map(function(model) {
+    var metrics = resolveCompareModelMetrics(model);
+    return {
+      label: model,
+      status: metrics ? "已有结果" : "缺结果",
+      pass_rate: metrics && metrics.pass_rate != null ? (metrics.pass_rate * 100).toFixed(0) + "%" : "--",
+      latency: metrics ? Number(metrics.avg_latency_ms || 0).toFixed(0) + " ms" : "--",
+      cost: metrics ? "$" + Number(metrics.total_cost_estimate_usd || 0).toFixed(6) : "--",
+    };
+  });
+  var promptVersions = {};
+  var datasets = {};
+  (runs || []).forEach(function(run) {
+    var m = run.metadata || {};
+    if (m.prompt_version) promptVersions[m.prompt_version] = true;
+    var requestedDs = Array.isArray(m.requested_datasets) ? m.requested_datasets.filter(Boolean).join(",") : "";
+    var ds = m.dataset_name || m.dataset_version || m.dataset_hash || m.dataset || requestedDs;
+    if (ds) datasets[ds] = true;
+  });
+  var compareSummary = document.getElementById("ov-compare-summary");
+  if (compareSummary) {
+    compareSummary.textContent = coverageText(models) + " · prompt " + Object.keys(promptVersions).length + " · dataset " + Object.keys(datasets).length;
+  }
+  target.innerHTML = '<table class="eval-table">'
+    + '<thead><tr><th>可比维度</th><th>A / B 候选</th><th>当前状态</th><th>说明</th></tr></thead><tbody>'
+    + models.map(function(m) {
+      var badge = m.status === "已有结果" ? "badge-pass" : "badge-fail";
+      return "<tr><td>LLM</td><td>" + esc(m.label) + '</td><td><span class="badge ' + badge + '">' + m.status + "</span></td><td>pass " + m.pass_rate + " · latency " + m.latency + " · cost " + m.cost + "</td></tr>";
+    }).join("")
+    + "<tr><td>Prompt version</td><td>" + esc(Object.keys(promptVersions).join(", ") || "未记录") + "</td><td>" + (Object.keys(promptVersions).length >= 2 ? '<span class="badge badge-pass">可比较</span>' : '<span class="badge badge-changed">样本不足</span>') + "</td><td>至少需要两个 prompt_version 的 run，才能可靠对比。</td></tr>"
+    + "<tr><td>Dataset</td><td>" + esc(Object.keys(datasets).map(shortCompareValue).join(", ") || "未记录") + "</td><td>" + (Object.keys(datasets).length >= 2 ? '<span class="badge badge-pass">可比较</span>' : '<span class="badge badge-changed">样本不足</span>') + "</td><td>至少需要两个 dataset 名称/版本/hash 的 run，才能可靠对比。</td></tr>"
+    + "</tbody></table>";
+}
+
+function coverageText(models) {
+  var ok = (models || []).filter(function(m) { return m.status === "已有结果"; }).length;
+  return "LLM " + ok + "/" + (models || []).length;
+}
+
+function renderChatbotModelMatrix(data, targetId, options) {
+  options = options || {};
   var target = document.getElementById(targetId || "chatbot-model-matrix");
   if (!target) return;
   if (!data || data.empty) {
@@ -806,19 +1725,26 @@ function renderChatbotModelMatrix(data, targetId) {
       + "</tr>";
   }).join("");
 
-  var bySuite = data.by_suite || {};
-  var suiteRows = Object.keys(bySuite).map(function(suite) {
-    var s = bySuite[suite] || {};
-    var passRate = s.pass_rate != null ? (s.pass_rate * 100).toFixed(0) + "%" : "--";
-    return "<tr>"
-      + "<td>" + esc(suite) + "</td>"
-      + "<td>" + (s.passed_cases || 0) + " / " + (s.total_cases || 0) + "</td>"
-      + "<td>" + passRate + "</td>"
-      + "<td>" + Number(s.avg_tool_calls || 0).toFixed(2) + "</td>"
-      + "<td>" + Number(s.avg_latency_ms || 0).toFixed(0) + " ms</td>"
-      + "<td>$" + Number(s.total_cost_estimate_usd || 0).toFixed(6) + "</td>"
-      + "</tr>";
-  }).join("");
+  var suiteSection = "";
+  if (!options.hideSuite) {
+    var bySuite = data.by_suite || {};
+    var suiteRows = Object.keys(bySuite).map(function(suite) {
+      var s = bySuite[suite] || {};
+      var passRate = s.pass_rate != null ? (s.pass_rate * 100).toFixed(0) + "%" : "--";
+      return "<tr>"
+        + "<td>" + suiteBadge(suite) + "</td>"
+        + "<td>" + (s.passed_cases || 0) + " / " + (s.total_cases || 0) + "</td>"
+        + "<td>" + passRate + "</td>"
+        + "<td>" + Number(s.avg_tool_calls || 0).toFixed(2) + "</td>"
+        + "<td>" + Number(s.avg_latency_ms || 0).toFixed(0) + " ms</td>"
+        + "<td>$" + Number(s.total_cost_estimate_usd || 0).toFixed(6) + "</td>"
+        + "</tr>";
+    }).join("");
+    suiteSection = '<div style="font-weight:700; font-size:.82rem; margin:1rem 0 .35rem; color:var(--gray-700)">By Suite</div>'
+      + '<table class="eval-table">'
+      + "<thead><tr><th>Suite</th><th>Passed</th><th>Pass Rate</th><th>Avg Tools</th><th>Avg Latency</th><th>Est. Cost</th></tr></thead>"
+      + "<tbody>" + (suiteRows || '<tr><td colspan="6" class="empty-state">No suite rows.</td></tr>') + "</tbody></table>";
+  }
 
   target.innerHTML =
     '<div class="meta-pills">'
@@ -832,10 +1758,7 @@ function renderChatbotModelMatrix(data, targetId) {
     + '<table class="eval-table">'
     + "<thead><tr><th>Model</th><th>Passed</th><th>Pass Rate</th><th>Avg Tools</th><th>Avg Latency</th><th>Est. Cost</th></tr></thead>"
     + "<tbody>" + (modelRows || '<tr><td colspan="6" class="empty-state">No model rows.</td></tr>') + "</tbody></table>"
-    + '<div style="font-weight:700; font-size:.82rem; margin:1rem 0 .35rem; color:var(--gray-700)">By Suite</div>'
-    + '<table class="eval-table">'
-    + "<thead><tr><th>Suite</th><th>Passed</th><th>Pass Rate</th><th>Avg Tools</th><th>Avg Latency</th><th>Est. Cost</th></tr></thead>"
-    + "<tbody>" + (suiteRows || '<tr><td colspan="6" class="empty-state">No suite rows.</td></tr>') + "</tbody></table>";
+    + suiteSection;
 }
 
 function renderOverviewMetrics(run) {
@@ -878,10 +1801,14 @@ function renderOverviewMetrics(run) {
 function renderOverviewRuns(runs) {
   var tbody = document.getElementById("overview-runs-body");
   if (runs.length === 0) {
+    var emptySummary = document.getElementById("ov-runs-summary");
+    if (emptySummary) emptySummary.textContent = "当前没有历史 run";
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No eval runs yet.</td></tr>';
     return;
   }
-  tbody.innerHTML = runs.map(function(run) {
+  var runsSummary = document.getElementById("ov-runs-summary");
+  if (runsSummary) runsSummary.textContent = "最近 " + Math.min(runs.length, 5) + " 次 · 共 " + runs.length + " 次";
+  tbody.innerHTML = runs.slice(0, 5).map(function(run) {
     var pct = run.pass_rate != null ? (run.pass_rate * 100).toFixed(0) : "--";
     var color = run.pass_rate >= 0.8 ? "#16a34a" : run.pass_rate >= 0.5 ? "#d97706" : "#dc2626";
     return "<tr>"
@@ -1770,6 +2697,7 @@ function heval_stat(label, value, flavor) {
 */
 
 function _ratio(n, d) { return d > 0 ? Math.round((n / d) * 100) : 0; }
+var _agentCaseReviewItems = {};
 
 function _bandColor(band) {
   // Landis & Koch verbal label → color
@@ -1782,11 +2710,352 @@ function _bandColor(band) {
 }
 
 async function loadReviewTab() {
+  var source = document.getElementById("review-source").value || "agent_cases";
+  var llmControl = document.getElementById("review-llm-component-control");
+  llmControl.style.display = source === "llm_calls" ? "" : "none";
+  if (source === "agent_cases") {
+    loadAgentCaseReviews();
+    return;
+  }
   var comp = document.getElementById("review-component").value;
-  // Fire all 3 in parallel — none should block the others
+  document.getElementById("review-source-note").innerHTML =
+    "数据源：<code>llm_traces</code> 表。适合排查单次模型调用、OCR/LLM 报错、prompt/response 质量。";
+  document.getElementById("review-left-card-title").textContent = "自动判断 vs 人工判断";
+  document.getElementById("review-left-card-help").textContent =
+    "用来回答：如果让 LLM judge 或自动 grader 判分，它和人的判断一致吗？";
+  document.getElementById("review-right-card-title").textContent = "人工审核覆盖率";
+  document.getElementById("review-right-card-help").textContent =
+    "用来回答：这个模块的 trace 你已经看过多少，还剩多少没看？";
+  document.getElementById("review-inbox-title").textContent = "待人工确认的 LLM traces";
   loadReviewSaturation(comp);
   loadReviewKappa(comp);
   loadReviewInbox(comp);
+}
+
+async function loadAgentCaseReviews() {
+  var left = document.getElementById("review-kappa-body");
+  var right = document.getElementById("review-saturation-body");
+  var box = document.getElementById("review-inbox");
+  var counter = document.getElementById("review-inbox-count");
+  document.getElementById("review-source-note").innerHTML =
+    "数据源：Agent Trace 同一个 <code>eval_chatbot_model_matrix_latest.json</code>。这里会自动收集 failed、FLAG_FOR_HUMAN、REJECT、decision mismatch、guardrail grader 失败的 case。";
+  document.getElementById("review-left-card-title").textContent = "Agent Trace 联动来源";
+  document.getElementById("review-left-card-help").textContent =
+    "用来回答：哪些 agent case 会进入人工确认队列，为什么进入？";
+  document.getElementById("review-right-card-title").textContent = "Agent case 人工确认覆盖率";
+  document.getElementById("review-right-card-help").textContent =
+    "用来回答：这些高风险/需要停下来的 case，你已经人工看过多少？";
+  document.getElementById("review-inbox-title").textContent = "待人工确认的 Agent cases";
+  left.innerHTML = '<span class="empty-state">Loading…</span>';
+  right.innerHTML = '<span class="empty-state">Loading…</span>';
+  box.innerHTML = '<span class="empty-state" style="display:block; padding:1rem;">Loading…</span>';
+  counter.textContent = "";
+  try {
+    var r = await fetch(API + "/api/eval/agent-case-reviews?reviewed=false&page_size=80");
+    if (!r.ok) {
+      left.innerHTML = '<span class="empty-state">err ' + r.status + '</span>';
+      right.innerHTML = "";
+      box.innerHTML = "";
+      return;
+    }
+    var data = await r.json();
+    if (data.empty) {
+      left.innerHTML = '<span class="empty-state">' + esc(data.message || data.error || "No agent eval data yet.") + '</span>';
+      right.innerHTML = "";
+      box.innerHTML = "";
+      return;
+    }
+    var pct = _ratio(data.reviewed || 0, data.candidate_count || 0);
+    left.innerHTML = ''
+      + '<div style="font-size:.8rem; color:var(--gray-600); line-height:1.55;">'
+      + '<div><strong>进入队列规则：</strong> failed / FLAG_FOR_HUMAN / REJECT / decision mismatch / grader failed</div>'
+      + '<div style="margin-top:.25rem"><strong>当前来源：</strong><code>' + esc(data.source || "model-matrix") + '</code></div>'
+      + '<div style="margin-top:.25rem"><strong>Eval run：</strong>' + esc(fmtTime(data.finished_at || data.started_at)) + '</div>'
+      + '</div>';
+    var fm = data.by_failure_mode || {};
+    var fmKeys = Object.keys(fm);
+    var fmRows = fmKeys.length
+      ? '<div style="margin-top:.55rem; font-size:.78rem;">'
+        + '<div style="color:var(--gray-500); margin-bottom:.2rem;">人工标出的失败类型：</div>'
+        + fmKeys.map(function(k) {
+            return '<div style="display:flex; justify-content:space-between; padding:.12rem 0;">'
+              + '<span><code>' + esc(k) + '</code></span><strong>' + fm[k] + '</strong></div>';
+          }).join("")
+        + '</div>'
+      : '';
+    right.innerHTML = ''
+      + '<div style="font-size:1.4rem; font-weight:700;">' + (data.reviewed || 0) + ' / ' + (data.candidate_count || 0) + '</div>'
+      + '<div style="font-size:.78rem; color:var(--gray-500);">已人工确认 ' + pct + '% · 还有 ' + (data.unreviewed || 0) + ' 条待看</div>'
+      + '<div style="display:flex; gap:1rem; margin-top:.4rem; font-size:.78rem;">'
+      + '<span style="color:#16a34a">确认没问题：' + (data.correct || 0) + '</span>'
+      + '<span style="color:#dc2626">标出有问题：' + Object.values(fm).reduce(function(a,b){return a+b;},0) + '</span>'
+      + '</div>'
+      + fmRows;
+    var items = data.items || [];
+    _agentCaseReviewItems = {};
+    items.forEach(function(item) {
+      _agentCaseReviewItems[item.review_key] = item;
+    });
+    counter.textContent = data.unreviewed + " 条待确认 · 当前显示 " + items.length;
+    if (!items.length) {
+      box.innerHTML = '<div class="empty-state" style="display:block; padding:1.5rem;">Agent case review 队列暂时为空。</div>';
+      return;
+    }
+    box.innerHTML = items.map(_renderAgentCaseReviewRow).join("");
+  } catch (e) {
+    left.innerHTML = '<span class="empty-state">' + esc(e.message || "load failed") + '</span>';
+    right.innerHTML = "";
+    box.innerHTML = "";
+  }
+}
+
+function _reviewReasonsText(reasons) {
+  var labelMap = {
+    eval_failed: "eval 失败",
+    flag_for_human: "FLAG_FOR_HUMAN",
+    reject: "REJECT",
+    decision_mismatch: "判断和预期不一致"
+  };
+  return (reasons || []).map(function(r) {
+    return labelMap[r] || r.replace("grader_failed:", "grader 失败：");
+  }).join(" · ");
+}
+
+function _safeDomId(raw) {
+  return encodeURIComponent(raw || "").replace(/%/g, "_");
+}
+
+function _messageRoleLabel(role) {
+  if (role === "user") return "用户";
+  if (role === "assistant") return "助手";
+  if (role === "system") return "系统";
+  return role || "message";
+}
+
+function _renderCaseMessages(messages) {
+  if (!messages || !messages.length) {
+    return '<div class="review-case-detail-body" style="color:var(--gray-500)">这个 case 没有记录原始用户输入。</div>';
+  }
+  return messages.map(function(msg) {
+    return '<div style="margin-bottom:.45rem">'
+      + '<strong>' + esc(_messageRoleLabel(msg.role)) + '：</strong>'
+      + '<span>' + esc(msg.content || "") + '</span>'
+      + '</div>';
+  }).join("");
+}
+
+function _renderAgentCaseSteps(item) {
+  var steps = item.agent_trace_steps || [];
+  if (!steps.length) {
+    return '<div class="review-case-detail-body" style="color:var(--gray-500)">'
+      + '这个 case 没有 tool timeline。对这类权限/提交阻断题，正确行为就是不调工具、不写草稿，直接拒绝或转人工。'
+      + '</div>';
+  }
+  return '<div class="at-timeline" style="margin-top:.35rem">'
+    + steps.map(function(step) {
+        var evType = step.event || "";
+        var cls = "at-step";
+        var badgeCls = "at-badge";
+        var label = evType || "STEP";
+        if (evType === "tool_call") { cls += " at-call"; badgeCls += " at-badge-call"; label = "CALL"; }
+        else if (evType === "tool_result") { cls += " at-result"; badgeCls += " at-badge-result"; label = "RESULT"; }
+        else if (evType === "write_field" || evType === "draft_updated") { cls += " at-write"; badgeCls += " at-badge-write"; label = "WRITE"; }
+        var bodyParts = [];
+        if (step.tool) bodyParts.push('<strong>Tool:</strong> ' + esc(step.tool));
+        if (step.input) bodyParts.push('<pre>' + esc(JSON.stringify(step.input, null, 2)) + '</pre>');
+        if (step.output_summary) bodyParts.push('<strong>Result:</strong> ' + esc(step.output_summary));
+        if (step.written_fields) bodyParts.push('<strong>Written:</strong> ' + esc((step.written_fields || []).join(", ")));
+        if (step.decision) bodyParts.push('<strong>Decision:</strong> ' + esc(step.decision));
+        if (step.blocked_reason) bodyParts.push('<strong>Blocked:</strong> <span style="color:#dc2626">' + esc(step.blocked_reason) + '</span>');
+        return '<div class="' + cls + '">'
+          + '<div class="at-step-header">'
+          + '<span class="at-badge ' + badgeCls + '">' + esc(label) + '</span>'
+          + '<span class="at-badge at-badge-subagent">' + esc(step.subagent || "orchestrator") + '</span>'
+          + (step.tool ? '<span style="font-weight:600; color:var(--gray-800)">' + esc(step.tool) + '</span>' : '')
+          + '</div>'
+          + (bodyParts.length ? '<div class="at-step-body">' + bodyParts.join("") + '</div>' : '')
+          + '</div>';
+      }).join("")
+    + '</div>';
+}
+
+function _renderAgentCaseGraders(item) {
+  var graders = item.graders || [];
+  if (!graders.length) return '<div class="review-case-detail-body" style="color:var(--gray-500)">无 grader 记录。</div>';
+  return graders.map(function(g) {
+    var statusCls = g.passed ? "at-grader-status-pass" : "at-grader-status-fail";
+    var icon = g.passed ? "&#10003;" : "&#10005;";
+    return '<div class="at-grader-row">'
+      + '<div class="' + statusCls + '">' + icon + '</div>'
+      + '<div class="at-grader-name">' + esc(g.name || "grader") + '</div>'
+      + '<div class="at-grader-msg">' + esc(g.message || "") + '</div>'
+      + '</div>';
+  }).join("");
+}
+
+function _renderAgentCaseReviewDetail(item) {
+  var expect = item.expect || {};
+  var expectedBits = [];
+  if (expect.decision_label) expectedBits.push("期望 decision: " + expect.decision_label);
+  if (expect.must_call_tools) expectedBits.push("必须调用: " + (expect.must_call_tools.join(", ") || "无"));
+  if (expect.forbidden_tools) expectedBits.push("禁止调用: " + (expect.forbidden_tools.join(", ") || "无"));
+  if (expect.response_contains) expectedBits.push("回复需包含: " + expect.response_contains.join(" / "));
+
+  var actualBits = [
+    "实际 decision: " + (item.decision_label_actual || "--"),
+    "状态: " + (item.passed ? "PASS" : "FAIL"),
+    "Subagents: " + ((item.subagents || []).join(", ") || "无"),
+    "Tools: " + ((item.tool_calls || []).join(", ") || "无")
+  ];
+
+  var draftSummary = "";
+  if (item.draft_fields && Object.keys(item.draft_fields).length) {
+    draftSummary += '<pre>' + esc(JSON.stringify(item.draft_fields, null, 2)) + '</pre>';
+  } else {
+    draftSummary += '<div class="review-case-detail-body" style="color:var(--gray-500)">没有写入草稿字段。</div>';
+  }
+  if (item.field_sources && Object.keys(item.field_sources).length) {
+    draftSummary += '<div class="review-case-detail-title" style="margin-top:.65rem">字段来源</div>'
+      + '<pre>' + esc(JSON.stringify(item.field_sources, null, 2)) + '</pre>';
+  }
+
+  return '<div class="review-case-detail-grid">'
+    + '<div class="review-case-detail-card">'
+    + '<div class="review-case-detail-title">用户输入</div>'
+    + '<div class="review-case-detail-body">' + _renderCaseMessages(item.messages || []) + '</div>'
+    + '</div>'
+    + '<div class="review-case-detail-card">'
+    + '<div class="review-case-detail-title">期望 vs 实际</div>'
+    + '<div class="review-case-detail-body"><strong>期望：</strong><br>' + esc(expectedBits.join("\n") || "未配置") + '</div>'
+    + '<pre>' + esc(actualBits.join("\n")) + '</pre>'
+    + '</div>'
+    + '</div>'
+    + '<div class="review-case-detail-grid">'
+    + '<div class="review-case-detail-card">'
+    + '<div class="review-case-detail-title">助手回复</div>'
+    + '<pre>' + esc(item.assistant_text || "") + '</pre>'
+    + '</div>'
+    + '<div class="review-case-detail-card">'
+    + '<div class="review-case-detail-title">草稿写入</div>'
+    + draftSummary
+    + '</div>'
+    + '</div>'
+    + '<div class="review-case-detail-card" style="margin-bottom:.75rem">'
+    + '<div class="review-case-detail-title">Agent Trace / Tool Timeline</div>'
+    + _renderAgentCaseSteps(item)
+    + '</div>'
+    + '<div class="review-case-detail-card">'
+    + '<div class="review-case-detail-title">自动 Grader</div>'
+    + _renderAgentCaseGraders(item)
+    + '</div>'
+    + '<div style="margin-top:.7rem; display:flex; gap:.45rem; flex-wrap:wrap;">'
+    + '<button class="btn btn-outline btn-sm" onclick="locateAgentCaseInTrace(\'' + encodeURIComponent(item.review_key) + '\')">在 Agent Trace 页面定位</button>'
+    + '</div>';
+}
+
+function toggleAgentCaseReviewDetail(encodedReviewKey) {
+  var reviewKey = decodeURIComponent(encodedReviewKey);
+  var item = _agentCaseReviewItems[reviewKey];
+  if (!item) return;
+  var detail = document.getElementById("acr-detail-" + _safeDomId(reviewKey));
+  if (!detail) return;
+  var isOpen = detail.style.display !== "none";
+  document.querySelectorAll(".review-case-detail").forEach(function(el) {
+    el.style.display = "none";
+  });
+  if (isOpen) return;
+  detail.innerHTML = _renderAgentCaseReviewDetail(item);
+  detail.style.display = "";
+  detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function locateAgentCaseInTrace(encodedReviewKey) {
+  var reviewKey = decodeURIComponent(encodedReviewKey);
+  var item = _agentCaseReviewItems[reviewKey];
+  if (!item) return;
+  switchTab("agent-traces", null);
+  await loadAgentTraces();
+  ["at-filter-suite", "at-filter-decision", "at-filter-status"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  ["at-filter-date-from", "at-filter-date-to"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  _renderAgentTraces(_atData || []);
+  var idx = (_atRenderedResults || []).findIndex(function(r) {
+    return r.case_id === item.case_id && (!item.model || r.model === item.model);
+  });
+  if (idx < 0) {
+    alert("Agent Trace 里没有找到这个 case。");
+    return;
+  }
+  showAgentTrace(idx);
+}
+
+function _renderAgentCaseReviewRow(item) {
+  var priorityColor = item.review_priority === "high" ? "#dc2626" : item.review_priority === "medium" ? "#d97706" : "#64748b";
+  var priorityLabel = item.review_priority === "high" ? "高优先级" : item.review_priority === "medium" ? "中优先级" : "低优先级";
+  var decision = item.decision_label_actual || "--";
+  var preview = item.assistant_text || "";
+  if (preview.length > 180) preview = preview.slice(0, 180) + "...";
+  var toolPreview = (item.tool_calls || []).slice(0, 6).join(", ");
+  if ((item.tool_calls || []).length > 6) toolPreview += ", ...";
+  var encodedReviewKey = encodeURIComponent(item.review_key);
+  var detailId = "acr-detail-" + _safeDomId(item.review_key);
+  return ''
+    + '<div class="review-inbox-row" style="border-left:3px solid ' + priorityColor + '">'
+    + '  <div class="review-inbox-meta">'
+    + '    <div>'
+    + '      <button class="review-case-link" onclick="toggleAgentCaseReviewDetail(\'' + encodedReviewKey + '\')" title="查看用户输入和 agent trace">' + esc(item.case_id || "") + '</button>'
+    + '      &nbsp;<span class="suite-badge" style="vertical-align:middle"><span class="suite-badge-name">' + esc(suiteInfo(item.suite).name) + '</span><span class="suite-badge-key">' + esc(item.suite || "--") + '</span></span>'
+    + '      &nbsp;<span style="font-size:.72rem; color:' + priorityColor + '; font-weight:700">' + priorityLabel + '</span>'
+    + '    </div>'
+    + '    <div style="font-size:.74rem; color:var(--gray-500)">decision: <strong>' + esc(decision) + '</strong> · status: <strong>' + (item.passed ? "PASS" : "FAIL") + '</strong></div>'
+    + '  </div>'
+    + '  <div style="font-size:.74rem; color:var(--gray-600); margin-top:.35rem;">进入原因：' + esc(_reviewReasonsText(item.review_reasons)) + '</div>'
+    + '  <div style="font-size:.74rem; color:var(--gray-600); margin-top:.2rem;">Subagents: ' + esc((item.subagents || []).join(", ") || "--") + ' · Tools: ' + esc(toolPreview || "--") + '</div>'
+    + (preview ? '  <div class="review-inbox-preview">' + esc(preview) + '</div>' : '')
+    + '  <div id="' + detailId + '" class="review-case-detail" style="display:none"></div>'
+    + '  <div style="font-size:.72rem; color:var(--gray-500); margin-top:.45rem;">人工确认这个 agent case 是否真的处理正确；如果不正确，就贴一个失败类型。</div>'
+    + '  <div class="review-inbox-actions">'
+    + '    <input id="acr-by-' + esc(item.review_key) + '" placeholder="审核人" value="' + esc(localStorage.getItem("eval_reviewer") || "") + '">'
+    + '    <select id="acr-tag-' + esc(item.review_key) + '">'
+    + '      <option value="">没问题</option>'
+    + '      <option value="wrong_route">路由错误</option>'
+    + '      <option value="missing_tool_call">漏调工具</option>'
+    + '      <option value="forbidden_tool_call">越权调工具</option>'
+    + '      <option value="wrong_decision">最终判断错</option>'
+    + '      <option value="unsafe_write">不安全写入</option>'
+    + '      <option value="trace_incomplete">trace 不完整</option>'
+    + '      <option value="bad_user_message">用户回复不清楚</option>'
+    + '      <option value="other">其他</option>'
+    + '    </select>'
+    + '    <input id="acr-notes-' + esc(item.review_key) + '" placeholder="备注，可选">'
+    + '    <button class="btn btn-outline btn-sm" onclick="submitAgentCaseReview(\'' + encodedReviewKey + '\')" style="font-size:.75rem;">标记已审核</button>'
+    + '  </div>'
+    + '</div>';
+}
+
+async function submitAgentCaseReview(encodedReviewKey) {
+  var reviewKey = decodeURIComponent(encodedReviewKey);
+  var by = document.getElementById("acr-by-" + reviewKey).value.trim();
+  var tag = document.getElementById("acr-tag-" + reviewKey).value;
+  var notes = document.getElementById("acr-notes-" + reviewKey).value.trim();
+  if (!by) { alert("请填写审核人"); return; }
+  localStorage.setItem("eval_reviewer", by);
+  try {
+    var r = await fetch(API + "/api/eval/agent-case-reviews/" + encodedReviewKey, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reviewed_by: by, failure_mode_tag: tag, notes: notes || null }),
+    });
+    if (!r.ok) { alert("review failed: " + r.status); return; }
+    loadReviewTab();
+  } catch (e) {
+    alert("review failed: " + (e.message || e));
+  }
 }
 
 async function loadReviewSaturation(comp) {
@@ -1802,7 +3071,7 @@ async function loadReviewSaturation(comp) {
     var keys = Object.keys(fm);
     if (keys.length) {
       fmRows = '<div style="margin-top:.6rem; font-size:.78rem;">'
-        + '<div style="color:var(--gray-500); margin-bottom:.2rem;">Failure modes:</div>'
+        + '<div style="color:var(--gray-500); margin-bottom:.2rem;">人工标出的失败类型：</div>'
         + keys.map(function(k) {
             return '<div style="display:flex; justify-content:space-between; padding:.15rem 0;">'
               + '<span style="color:var(--gray-700)"><code>' + esc(k) + '</code></span>'
@@ -1813,11 +3082,11 @@ async function loadReviewSaturation(comp) {
     body.innerHTML = ''
       + '<div style="font-size:1.4rem; font-weight:700;">' + data.reviewed + ' / ' + data.total + '</div>'
       + '<div style="font-size:.78rem; color:var(--gray-500);">'
-      + '  reviewed (' + pct + '%) · ' + (data.unreviewed || 0) + ' in inbox'
+      + '  已人工确认 ' + pct + '% · 还有 ' + (data.unreviewed || 0) + ' 条待看'
       + '</div>'
       + '<div style="display:flex; gap:1rem; margin-top:.4rem; font-size:.78rem;">'
-      + '  <span style="color:#16a34a">✓ correct: ' + (data.correct || 0) + '</span>'
-      + '  <span style="color:#dc2626">✗ flagged: ' + Object.values(fm).reduce(function(a,b){return a+b;},0) + '</span>'
+      + '  <span style="color:#16a34a">确认没问题：' + (data.correct || 0) + '</span>'
+      + '  <span style="color:#dc2626">标出有问题：' + Object.values(fm).reduce(function(a,b){return a+b;},0) + '</span>'
       + '</div>'
       + fmRows;
   } catch (e) {
@@ -1833,7 +3102,10 @@ async function loadReviewKappa(comp) {
     if (!r.ok) { body.innerHTML = '<span class="empty-state">err ' + r.status + '</span>'; return; }
     var data = await r.json();
     if (data.empty) {
-      body.innerHTML = '<span class="empty-state">' + esc(data.message || "no snapshot yet") + '</span>';
+      body.innerHTML = '<div style="font-size:.8rem; color:var(--gray-500); line-height:1.5;">'
+        + '还没有足够的人工标签来计算一致性。先在下面审核几条 trace，再回来看这里。'
+        + (data.message ? '<br><span style="font-size:.72rem">' + esc(data.message) + '</span>' : '')
+        + '</div>';
       return;
     }
     var kappa = data.kappa != null ? data.kappa.toFixed(3) : "—";
@@ -1843,7 +3115,7 @@ async function loadReviewKappa(comp) {
     var classes = data.classes || Object.keys(m);
     if (classes.length) {
       matrixRows = '<div style="margin-top:.6rem; font-size:.72rem;">'
-        + '<div style="color:var(--gray-500); margin-bottom:.2rem;">Confusion matrix (rows=human, cols=system):</div>'
+        + '<div style="color:var(--gray-500); margin-bottom:.2rem;">分歧矩阵：行是人工判断，列是系统判断。</div>'
         + '<table style="border-collapse:collapse; font-size:.72rem;">'
         + '<tr><th></th>' + classes.map(function(c) { return '<th style="padding:.1rem .4rem; color:var(--gray-500)">' + esc(c) + '</th>'; }).join("") + '</tr>'
         + classes.map(function(h) {
@@ -1864,9 +3136,9 @@ async function loadReviewKappa(comp) {
       + '    ' + esc(data.band || "—") + '</span>'
       + '</div>'
       + '<div style="font-size:.78rem; color:var(--gray-500);">'
-      + '  threshold ' + (data.threshold != null ? data.threshold : "—")
-      + '  · n=' + (data.sample_size || 0)
-      + (data.skipped_placeholders ? '  · ' + data.skipped_placeholders + ' placeholder(s) skipped' : '')
+      + '  一致性阈值：' + (data.threshold != null ? data.threshold : "—")
+      + '  · 人工样本数：' + (data.sample_size || 0)
+      + (data.skipped_placeholders ? '  · 跳过占位样本：' + data.skipped_placeholders : '')
       + '</div>'
       + matrixRows;
   } catch (e) {
@@ -1885,10 +3157,10 @@ async function loadReviewInbox(comp) {
     if (!r.ok) { box.innerHTML = '<span class="empty-state" style="display:block; padding:1rem;">err ' + r.status + '</span>'; return; }
     var data = await r.json();
     var items = data.items || [];
-    counter.textContent = data.total + " unreviewed · showing " + items.length;
+    counter.textContent = data.total + " 条待确认 · 当前显示 " + items.length;
     if (!items.length) {
       box.innerHTML = '<div class="empty-state" style="display:block; padding:1.5rem;">'
-        + '🎉 inbox is empty for this component (or no traces logged yet)'
+        + '这个模块暂时没有待人工确认的 trace。'
         + '</div>';
       return;
     }
@@ -1908,30 +3180,31 @@ function _renderInboxRow(t) {
     preview = "ERROR: " + t.error;
   }
   return ''
-    + '<div style="border-bottom:1px solid var(--gray-200); padding:.7rem 1rem;">'
-    + '  <div style="display:flex; justify-content:space-between; gap:.5rem; align-items:baseline;">'
+    + '<div class="review-inbox-row' + (t.error ? ' error' : '') + '">'
+    + '  <div class="review-inbox-meta">'
     + '    <div>'
     + '      <code style="font-size:.72rem; color:var(--gray-500)">' + esc((t.id || "").slice(0, 8)) + '</code>'
     + '      &nbsp;<span style="font-size:.78rem; color:var(--gray-700)">' + esc(t.component || "") + '</span>'
     + '      &nbsp;<span style="font-size:.7rem; color:var(--gray-400)">' + esc(ts) + '</span>'
-    + '      ' + (t.error ? '<span style="color:#dc2626; font-size:.7rem; margin-left:.4rem;">[error]</span>' : '')
+    + '      ' + (t.error ? '<span style="color:#dc2626; font-size:.7rem; margin-left:.4rem;">error</span>' : '')
     + '    </div>'
     + '  </div>'
-    + (preview ? '  <div style="font-size:.75rem; color:var(--gray-600); margin-top:.3rem; font-family:ui-monospace,monospace;">' + esc(preview) + '</div>' : '')
-    + '  <div style="margin-top:.5rem; display:flex; gap:.4rem; align-items:center; flex-wrap:wrap;">'
-    + '    <input id="rv-by-' + esc(t.id) + '" placeholder="reviewer (you)" value="' + esc(localStorage.getItem("eval_reviewer") || "") + '" style="font-size:.75rem; padding:.25rem .5rem; width:9rem;">'
-    + '    <select id="rv-tag-' + esc(t.id) + '" style="font-size:.75rem; padding:.25rem .5rem;">'
-    + '      <option value="">✓ correct (no tag)</option>'
-    + '      <option value="false_positive">false_positive</option>'
-    + '      <option value="false_negative">false_negative</option>'
-    + '      <option value="wrong_attribution">wrong_attribution</option>'
-    + '      <option value="missed_factor">missed_factor</option>'
-    + '      <option value="style_only">style_only</option>'
-    + '      <option value="hallucination">hallucination</option>'
-    + '      <option value="other">other</option>'
+    + (preview ? '  <div class="review-inbox-preview">' + esc(preview) + '</div>' : '')
+    + '  <div style="font-size:.72rem; color:var(--gray-500); margin-top:.45rem;">人工确认这条 trace 是否能代表真实问题；如果有问题，就给它贴一个失败类型。</div>'
+    + '  <div class="review-inbox-actions">'
+    + '    <input id="rv-by-' + esc(t.id) + '" placeholder="审核人" value="' + esc(localStorage.getItem("eval_reviewer") || "") + '">'
+    + '    <select id="rv-tag-' + esc(t.id) + '">'
+    + '      <option value="">没问题</option>'
+    + '      <option value="false_positive">误报</option>'
+    + '      <option value="false_negative">漏报</option>'
+    + '      <option value="wrong_attribution">原因归错</option>'
+    + '      <option value="missed_factor">漏掉关键因素</option>'
+    + '      <option value="style_only">只是表达问题</option>'
+    + '      <option value="hallucination">幻觉</option>'
+    + '      <option value="other">其他</option>'
     + '    </select>'
-    + '    <input id="rv-notes-' + esc(t.id) + '" placeholder="notes (optional)" style="font-size:.75rem; padding:.25rem .5rem; flex:1; min-width:10rem;">'
-    + '    <button class="btn btn-outline btn-sm" onclick="submitTraceReview(\'' + esc(t.id) + '\')" style="font-size:.75rem;">Mark reviewed</button>'
+    + '    <input id="rv-notes-' + esc(t.id) + '" placeholder="备注，可选">'
+    + '    <button class="btn btn-outline btn-sm" onclick="submitTraceReview(\'' + esc(t.id) + '\')" style="font-size:.75rem;">标记已审核</button>'
     + '  </div>'
     + '</div>';
 }
@@ -2021,9 +3294,1025 @@ async function showTrace(id) {
   } catch (e) { console.error("showTrace:", e); }
 }
 
+/* ── Agent Trace ─────────────────────────────── */
+var _atData = null;
+var _atRenderedResults = null;
+var _atRunStartedAt = null;
+var _atRunFinishedAt = null;
+
+async function loadAgentTraces() {
+  try {
+    var r = await fetch(API + "/api/eval/chatbot/model-matrix");
+    var data = await r.json();
+    if (!data || data.empty || !data.results) {
+      document.getElementById("at-body").innerHTML =
+        '<tr><td colspan="7" class="empty-state">No agent trace data. Run: <code>pytest backend/tests/test_chatbot_eval.py -q</code></td></tr>';
+      document.getElementById("at-summary").innerHTML = "";
+      document.getElementById("at-suite-guide").innerHTML = "";
+      return;
+    }
+    _atRunStartedAt = data.started_at || null;
+    _atRunFinishedAt = data.finished_at || null;
+    _atData = (data.results || []).map(function(result) {
+      result._run_started_at = _atRunStartedAt;
+      result._run_finished_at = _atRunFinishedAt;
+      return result;
+    });
+    _populateAtSuiteFilter(data.results);
+    _setAgentTraceDateDefaults();
+    _renderAgentTraces(_atData);
+  } catch (e) {
+    console.error("loadAgentTraces:", e);
+    document.getElementById("at-body").innerHTML =
+      '<tr><td colspan="7" class="empty-state">Failed to load agent trace data.</td></tr>';
+    document.getElementById("at-suite-guide").innerHTML = "";
+  }
+}
+
+function _dateInputValue(isoDate) {
+  if (!isoDate) return "";
+  var d = new Date(isoDate);
+  if (isNaN(d.getTime())) return "";
+  var year = d.getFullYear();
+  var month = String(d.getMonth() + 1).padStart(2, "0");
+  var day = String(d.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+
+function _setAgentTraceDateDefaults() {
+  var fromEl = document.getElementById("at-filter-date-from");
+  var toEl = document.getElementById("at-filter-date-to");
+  if (!fromEl || !toEl) return;
+  var runDate = _dateInputValue(_atRunStartedAt || _atRunFinishedAt);
+  if (runDate && !fromEl.value && !toEl.value) {
+    fromEl.value = runDate;
+    toEl.value = runDate;
+  }
+}
+
+function _agentTraceDateValue(result) {
+  return _dateInputValue(
+    result.created_at ||
+    result.started_at ||
+    result.finished_at ||
+    result.run_started_at ||
+    result._run_started_at ||
+    result._run_finished_at
+  );
+}
+
+function _populateAtSuiteFilter(results) {
+  var sel = document.getElementById("at-filter-suite");
+  var suites = {};
+  results.forEach(function(r) { if (r.suite) suites[r.suite] = true; });
+  var current = sel.value;
+  sel.innerHTML = '<option value="">All</option>'
+    + Object.keys(suites).sort().map(function(s) {
+      return '<option value="' + esc(s) + '"' + (s === current ? " selected" : "") + '>' + esc(suiteLabel(s)) + '</option>';
+    }).join("");
+}
+
+function _filterAtResults(results) {
+  var suite = document.getElementById("at-filter-suite").value;
+  var decision = document.getElementById("at-filter-decision").value;
+  var status = document.getElementById("at-filter-status").value;
+  var dateFromEl = document.getElementById("at-filter-date-from");
+  var dateToEl = document.getElementById("at-filter-date-to");
+  var dateFrom = dateFromEl ? dateFromEl.value : "";
+  var dateTo = dateToEl ? dateToEl.value : "";
+  return results.filter(function(r) {
+    if (suite && r.suite !== suite) return false;
+    if (decision && r.decision_label_actual !== decision) return false;
+    if (status === "passed" && !r.passed) return false;
+    if (status === "failed" && r.passed) return false;
+    if (dateFrom || dateTo) {
+      var caseDate = _agentTraceDateValue(r);
+      if (!caseDate) return false;
+      if (dateFrom && caseDate < dateFrom) return false;
+      if (dateTo && caseDate > dateTo) return false;
+    }
+    return true;
+  });
+}
+
+function _agentTraceRiskScore(r) {
+  var score = 0;
+  if (!r.passed) score += 10;
+  if (r.decision_label_actual === "REJECT") score += 8;
+  if (r.decision_label_actual === "FLAG_FOR_HUMAN") score += 5;
+  if ((r.graders || []).some(function(g) { return !g.passed; })) score += 4;
+  if ((r.tool_calls || []).length >= 5) score += 1;
+  return score;
+}
+
+function _agentTraceReason(r) {
+  var reasons = [];
+  if (!r.passed) reasons.push("自动 grader 未通过");
+  if (r.decision_label_actual === "REJECT") reasons.push("最终 REJECT");
+  if (r.decision_label_actual === "FLAG_FOR_HUMAN") reasons.push("需要人工确认");
+  if ((r.graders || []).some(function(g) { return !g.passed; })) reasons.push("有 grader 失败");
+  if ((r.tool_calls || []).length >= 5) reasons.push("工具调用较多");
+  return reasons.join(" · ") || "低风险样例";
+}
+
+function _setAtQuickFilter(decision, status) {
+  var decisionEl = document.getElementById("at-filter-decision");
+  var statusEl = document.getElementById("at-filter-status");
+  if (decisionEl) decisionEl.value = decision || "";
+  if (statusEl) statusEl.value = status || "";
+  _renderAgentTraces();
+}
+
+function _renderAgentTraceInsight(results, counts) {
+  var target = document.getElementById("at-investigation-guide");
+  if (!target) return;
+  var failed = (results || []).filter(function(r) { return !r.passed; }).length;
+  var highRisk = (results || []).filter(function(r) { return _agentTraceRiskScore(r) >= 8; }).length;
+  var cls = failed || counts.rejectCount ? "high" : counts.flagCount ? "" : "good";
+  var title = "优先看 FLAG / REJECT / failed";
+  var desc = "这页是查案用的，不需要从第一条开始读。先过滤失败、REJECT 或 FLAG，再点 Trace 看是哪一步工具调用或写入行为出了问题。";
+  if (!failed && !counts.rejectCount && !counts.flagCount) {
+    title = "当前过滤结果没有明显红线";
+    desc = "可以抽查 PASS case 的 trace 形状是否符合预期，或切到其他 suite / 日期范围继续看。";
+  } else if (failed || counts.rejectCount) {
+    title = "先处理阻断 case";
+    desc = "当前过滤结果有 " + failed + " 条 failed、" + counts.rejectCount + " 条 REJECT。先看这些 case 的 grader 和 timeline，再决定改 prompt、tool policy 还是 fixture。";
+  }
+  target.innerHTML = '<div class="at-investigation-card ' + cls + '">'
+    + '<div><div class="at-investigation-title">' + esc(title) + '</div>'
+    + '<div class="at-investigation-desc">' + esc(desc) + '</div>'
+    + '<div class="at-investigation-desc">高风险候选 ' + highRisk + ' 条 · FLAG ' + counts.flagCount + ' · REJECT ' + counts.rejectCount + '</div></div>'
+    + '<div class="at-investigation-actions">'
+    + '<button class="btn btn-outline btn-sm" onclick="_setAtQuickFilter(\'\', \'failed\')">只看 failed</button>'
+    + '<button class="btn btn-outline btn-sm" onclick="_setAtQuickFilter(\'FLAG_FOR_HUMAN\', \'\')">只看 FLAG</button>'
+    + '<button class="btn btn-outline btn-sm" onclick="_setAtQuickFilter(\'REJECT\', \'\')">只看 REJECT</button>'
+    + '<button class="btn btn-outline btn-sm" onclick="_setAtQuickFilter(\'\', \'\')">清除</button>'
+    + '</div></div>';
+}
+
+function _renderAgentTraces(allResults) {
+  var results = _filterAtResults(allResults || _atData || []);
+
+  var totalSteps = 0, passCount = 0, flagCount = 0, rejectCount = 0;
+  var subagentSet = {};
+  results.forEach(function(r) {
+    totalSteps += (r.agent_trace_steps || []).length;
+    if (r.decision_label_actual === "PASS") passCount++;
+    else if (r.decision_label_actual === "FLAG_FOR_HUMAN") flagCount++;
+    else if (r.decision_label_actual === "REJECT") rejectCount++;
+    (r.subagents || []).forEach(function(s) { subagentSet[s] = true; });
+  });
+
+  document.getElementById("at-summary").innerHTML =
+    '<div class="at-summary-grid">'
+    + '<div class="at-summary-card"><div class="val">' + results.length + '</div><div class="lbl">Cases</div></div>'
+    + '<div class="at-summary-card"><div class="val">' + totalSteps + '</div><div class="lbl">Total Steps</div></div>'
+    + '<div class="at-summary-card"><div class="val" style="color:#16a34a">' + passCount + '</div><div class="lbl">PASS</div></div>'
+    + '<div class="at-summary-card"><div class="val" style="color:#d97706">' + flagCount + '</div><div class="lbl">FLAG</div></div>'
+    + '<div class="at-summary-card"><div class="val" style="color:#dc2626">' + rejectCount + '</div><div class="lbl">REJECT</div></div>'
+    + '<div class="at-summary-card"><div class="val">' + Object.keys(subagentSet).length + '</div><div class="lbl">Subagents</div></div>'
+    + '</div>';
+  _renderAgentTraceInsight(results, { passCount: passCount, flagCount: flagCount, rejectCount: rejectCount });
+  document.getElementById("at-suite-guide").innerHTML = renderSuiteGuide(
+    Object.keys((results || []).reduce(function(acc, r) {
+      if (r.suite) acc[r.suite] = true;
+      return acc;
+    }, {}))
+  );
+
+  var tbody = document.getElementById("at-body");
+  if (results.length === 0) {
+    _atRenderedResults = [];
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No cases match filters.</td></tr>';
+    return;
+  }
+  var displayResults = results.slice().sort(function(a, b) {
+    return _agentTraceRiskScore(b) - _agentTraceRiskScore(a);
+  });
+  _atRenderedResults = displayResults;
+  tbody.innerHTML = displayResults.map(function(r, idx) {
+    var subagents = (r.subagents || []).map(function(s) {
+      return '<span class="at-badge at-badge-subagent">' + esc(s) + '</span>';
+    }).join(" ");
+    var toolCount = (r.tool_calls || []).length;
+    var decBadge = "";
+    if (r.decision_label_actual === "PASS") decBadge = '<span class="badge badge-pass">PASS</span>';
+    else if (r.decision_label_actual === "FLAG_FOR_HUMAN") decBadge = '<span class="badge badge-changed">FLAG</span>';
+    else if (r.decision_label_actual === "REJECT") decBadge = '<span class="badge badge-fail">REJECT</span>';
+    else decBadge = '<span class="badge badge-neutral">' + esc(r.decision_label_actual || "--") + '</span>';
+    var statusBadge = r.passed
+      ? '<span class="badge badge-pass">PASS</span>'
+      : '<span class="badge badge-fail">FAIL</span>';
+    return "<tr>"
+      + "<td><div>" + esc(r.case_id) + "</div><div class=\"at-case-reason" + (_agentTraceRiskScore(r) >= 8 ? " at-case-risk" : "") + "\">" + esc(_agentTraceReason(r)) + "</div></td>"
+      + "<td>" + suiteBadge(r.suite || "--") + "</td>"
+      + "<td>" + (subagents || "--") + "</td>"
+      + "<td>" + toolCount + "</td>"
+      + "<td>" + decBadge + "</td>"
+      + "<td>" + statusBadge + "</td>"
+      + '<td><button class="btn btn-outline btn-sm" onclick="showAgentTrace(' + idx + ')">Trace</button></td>'
+      + "</tr>";
+  }).join("");
+}
+
+function showAgentTrace(idx) {
+  var filtered = _atRenderedResults || _filterAtResults(_atData || []);
+  var r = filtered[idx];
+  if (!r) return;
+
+  var steps = r.agent_trace_steps || [];
+  var toolCalls = r.tool_calls || [];
+  var subagents = r.subagents || [];
+
+  var headerHtml =
+    '<h3 style="margin:0 0 .8rem; font-size:.9rem; font-weight:700">'
+    + 'Agent Trace &mdash; <code>' + esc(r.case_id) + '</code> '
+    + (r.passed ? '<span class="badge badge-pass">PASS</span>' : '<span class="badge badge-fail">FAIL</span>')
+    + '</h3>';
+
+  var decisionHtml = r.decision_label_actual === "PASS"
+    ? '<span class="badge badge-pass">PASS</span>'
+    : r.decision_label_actual === "REJECT"
+      ? '<span class="badge badge-fail">REJECT</span>'
+      : r.decision_label_actual === "FLAG_FOR_HUMAN"
+        ? '<span class="badge badge-changed">FLAG_FOR_HUMAN</span>'
+        : '<span class="badge badge-neutral">' + esc(r.decision_label_actual || "--") + '</span>';
+
+  var metaHtml =
+    '<div class="at-meta-grid">'
+    + '<div class="at-meta-item"><span class="at-meta-label">Model</span>' + esc(r.model || "--") + '</div>'
+    + '<div class="at-meta-item"><span class="at-meta-label">Suite</span>' + suiteBadge(r.suite || "--") + '</div>'
+    + '<div class="at-meta-item"><span class="at-meta-label">Latency</span>' + (r.latency_ms || "--") + 'ms</div>'
+    + '<div class="at-meta-item"><span class="at-meta-label">Subagents</span>' + subagents.map(function(s) {
+        return '<span class="at-badge at-badge-subagent">' + esc(s) + '</span>';
+      }).join(" ") + '</div>'
+    + '<div class="at-meta-item"><span class="at-meta-label">Decision</span>' + decisionHtml
+    + (r.decision_label_expected ? ' <span style="color:var(--gray-500); font-size:.72rem">expected: ' + esc(r.decision_label_expected) + '</span>' : '') + '</div>'
+    + '<div class="at-meta-item"><span class="at-meta-label">Tools</span>' + toolCalls.length + ' calls</div>'
+    + '</div>';
+
+  var graderHtml = '';
+  if (r.graders && r.graders.length > 0) {
+    var graderPassCount = r.graders.filter(function(g) { return g.passed; }).length;
+    graderHtml = '<details class="at-detail-section">'
+      + '<summary><span>自动评分 Graders</span><span style="font-size:.7rem; color:var(--gray-500)">'
+      + graderPassCount + ' / ' + r.graders.length + ' passed</span></summary>'
+      + '<div class="at-section-body">'
+      + '<div class="at-section-hint">这里是自动检查项：该调用的工具、禁止调用的工具、最终判断、trace 结构等。失败时优先看这里。</div>'
+      + r.graders.map(function(g) {
+          var icon = g.passed ? '&#10003;' : '&#10005;';
+          var statusCls = g.passed ? "at-grader-status-pass" : "at-grader-status-fail";
+          return '<div class="at-grader-row">'
+            + '<div class="' + statusCls + '">' + icon + '</div>'
+            + '<div class="at-grader-name">' + esc(g.name) + '</div>'
+            + '<div class="at-grader-msg">' + esc(g.message) + '</div>'
+            + '</div>';
+        }).join("")
+      + '</div></details>';
+  }
+
+  var timelineBody = '';
+  if (steps.length === 0) {
+    timelineBody += '<div class="empty-state" style="padding:1rem">No trace steps recorded for this case.</div>';
+  } else {
+    timelineBody += '<div class="at-timeline">';
+    steps.forEach(function(step) {
+      var evType = step.event || "";
+      var cls = "at-step";
+      var badgeCls = "at-badge";
+      var label = evType;
+      if (evType === "tool_call") { cls += " at-call"; badgeCls += " at-badge-call"; label = "CALL"; }
+      else if (evType === "tool_result") { cls += " at-result"; badgeCls += " at-badge-result"; label = "RESULT"; }
+      else if (evType === "write_field" || evType === "draft_updated") { cls += " at-write"; badgeCls += " at-badge-write"; label = "WRITE"; }
+
+      var bodyParts = [];
+      if (step.tool) bodyParts.push('<strong>Tool:</strong> ' + esc(step.tool));
+      if (step.input) bodyParts.push('<pre>' + esc(JSON.stringify(step.input, null, 2)) + '</pre>');
+      if (step.output_summary) bodyParts.push('<strong>Result:</strong> ' + esc(step.output_summary));
+      if (step.written_fields) bodyParts.push('<strong>Written:</strong> ' + esc(step.written_fields.join(", ")));
+      if (step.decision) bodyParts.push('<strong>Decision:</strong> ' + esc(step.decision));
+      if (step.blocked_reason) bodyParts.push('<strong>Blocked:</strong> <span style="color:#dc2626">' + esc(step.blocked_reason) + '</span>');
+
+      timelineBody += '<div class="' + cls + '">'
+        + '<div class="at-step-header">'
+        + '<span class="at-badge ' + badgeCls + '">' + label + '</span>'
+        + '<span class="at-badge at-badge-subagent">' + esc(step.subagent || "orchestrator") + '</span>'
+        + (step.tool ? '<span style="font-weight:600; color:var(--gray-800)">' + esc(step.tool) + '</span>' : '')
+        + '</div>'
+        + (bodyParts.length > 0 ? '<div class="at-step-body">' + bodyParts.join("") + '</div>' : '')
+        + '</div>';
+    });
+    timelineBody += '</div>';
+  }
+  var timelineHtml = '<details class="at-detail-section">'
+    + '<summary><span>调用时间线 Timeline</span><span style="font-size:.7rem; color:var(--gray-500)">'
+    + steps.length + ' steps</span></summary>'
+    + '<div class="at-section-body">'
+    + '<div class="at-section-hint">这里记录 agent 每一步：哪个 subagent 调了哪个 tool、传了什么参数、是否写入草稿。只有排查失败或越权时需要展开。</div>'
+    + timelineBody
+    + '</div></details>';
+
+  var draftHtml = '';
+  if (r.draft_fields && Object.keys(r.draft_fields).length > 0) {
+    draftHtml = '<details class="at-detail-section">'
+      + '<summary><span>最终草稿字段</span><span style="font-size:.7rem; color:var(--gray-500)">draft fields</span></summary>'
+      + '<div class="at-section-body"><pre>' + esc(JSON.stringify(r.draft_fields, null, 2)) + '</pre></div></details>';
+  }
+  if (r.field_sources && Object.keys(r.field_sources).length > 0) {
+    draftHtml += '<details class="at-detail-section">'
+      + '<summary><span>字段来源</span><span style="font-size:.7rem; color:var(--gray-500)">field sources</span></summary>'
+      + '<div class="at-section-body"><pre>' + esc(JSON.stringify(r.field_sources, null, 2)) + '</pre></div></details>';
+  }
+
+  var textHtml = '';
+  if (r.assistant_text) {
+    textHtml = '<details class="at-detail-section">'
+      + '<summary><span>用户可见回复</span><span style="font-size:.7rem; color:var(--gray-500)">assistant response</span></summary>'
+      + '<div class="at-section-body"><pre style="max-height:200px">' + esc(r.assistant_text) + '</pre></div></details>';
+  }
+
+  document.getElementById("at-detail-panel").innerHTML = '<div class="trace-detail">'
+    + headerHtml + metaHtml + graderHtml + timelineHtml + draftHtml + textHtml
+    + '<div class="at-detail-actions"><button class="btn-save btn-secondary" onclick="document.getElementById(\'at-detail-panel\').innerHTML=\'\'">Close</button></div>'
+    + '</div>';
+
+  document.getElementById("at-detail-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 /* ── Compare Runs ────────────────────────────── */
+function getCompareMode() {
+  var el = document.getElementById("compare-dimension");
+  return el ? el.value : "llm";
+}
+
+function setCompareMode(mode) {
+  var el = document.getElementById("compare-dimension");
+  if (el) el.value = mode;
+  updateCompareMode();
+}
+
+function shortCompareValue(value) {
+  if (value == null || value === "") return "?";
+  if (Array.isArray(value)) value = value.join(",");
+  if (typeof value === "object") value = JSON.stringify(value);
+  value = String(value);
+  return value.length > 22 ? value.slice(0, 10) + "…" + value.slice(-8) : value;
+}
+
+function compareRunOptionLabel(run, mode) {
+  var m = run.metadata || {};
+  var pass = run.pass_rate != null ? (run.pass_rate * 100).toFixed(0) + "%" : "--";
+  var prompt = shortCompareValue(m.prompt_version || m.prompt || m.active_prompt_version);
+  var requested = Array.isArray(m.requested_datasets) ? m.requested_datasets.filter(Boolean).join(",") : "";
+  var dataset = shortCompareValue(m.dataset_name || m.dataset_version || m.dataset_hash || m.dataset || requested);
+  var model = shortCompareValue(m.model || m.llm_model || m.provider_model);
+  var cases = m.dataset_case_count || run.total_cases || 0;
+  var detail = "";
+  if (mode === "prompt") {
+    detail = "prompt " + prompt + " · model " + model + " · dataset " + dataset + " · " + cases + " cases";
+  } else if (mode === "dataset") {
+    detail = "dataset " + dataset + " · " + cases + " cases · model " + model + " · prompt " + prompt;
+  } else {
+    detail = (run.trigger || "manual") + " · model " + model + " · prompt " + prompt + " · dataset " + dataset + " · " + cases + " cases";
+  }
+  return fmtTime(run.started_at) + " | " + pass + " | " + detail;
+}
+
+function compareRunMetaValue(run, mode) {
+  var m = (run && run.metadata) || {};
+  if (mode === "prompt") {
+    return m.prompt_version || m.prompt || m.active_prompt_version || "";
+  }
+  if (mode === "dataset") {
+    var requested = Array.isArray(m.requested_datasets) ? m.requested_datasets.filter(Boolean) : [];
+    return m.dataset_name || m.dataset_version || m.dataset_hash || m.dataset || requested.join(",") || "";
+  }
+  return "";
+}
+
+function compareValueFallback(mode) {
+  if (mode === "prompt") return "未记录 prompt_version";
+  if (mode === "dataset") return "未记录 dataset";
+  return "未记录";
+}
+
+function collectCompareValues(mode) {
+  if (mode === "llm") {
+    var byModel = (compareMatrixData && compareMatrixData.by_model) || {};
+    var models = Object.keys(byModel).sort();
+    var usableModels = models.filter(function(model) {
+      return !String(model).startsWith("mock-scripted");
+    });
+    if (usableModels.length >= 2) {
+      return usableModels.map(function(model) { return { value: model, label: model }; });
+    }
+    return DEFAULT_COMPARE_LLMS.map(function(model) { return { value: model, label: model }; });
+  }
+  if (mode === "prompt" || mode === "dataset") {
+    var seen = {};
+    var values = [];
+    if (mode === "dataset") {
+      (chatbotDatasetOptions || []).forEach(function(ds) {
+        var value = ds.id || ds.name;
+        if (!value || seen[value]) return;
+        seen[value] = true;
+        var label = ds.name && ds.name !== value ? value + " — " + ds.name : value;
+        if (ds.baseline) label += " · baseline";
+        values.push({ value: value, label: label });
+      });
+    }
+    allRuns.forEach(function(run) {
+      var raw = compareRunMetaValue(run, mode);
+      var value = raw || compareValueFallback(mode);
+      if (seen[value]) return;
+      seen[value] = true;
+      values.push({ value: value, label: value });
+    });
+    return values;
+  }
+  return [];
+}
+
+function resolveCompareModelMetrics(modelName) {
+  var byModel = (compareMatrixData && compareMatrixData.by_model) || {};
+  var aliases = MODEL_COMPARE_ALIASES[modelName] || [modelName];
+  for (var i = 0; i < aliases.length; i++) {
+    if (byModel[aliases[i]]) return byModel[aliases[i]];
+  }
+  return byModel[modelName] || null;
+}
+
+function compareModelAliases(modelName) {
+  var aliases = MODEL_COMPARE_ALIASES[modelName] || [modelName];
+  if (aliases.indexOf(modelName) < 0) aliases = aliases.concat([modelName]);
+  return aliases.map(function(v) { return String(v || "").toLowerCase(); });
+}
+
+function compareModelMatches(actualModel, selectedModel) {
+  var actual = String(actualModel || "").toLowerCase();
+  return compareModelAliases(selectedModel).indexOf(actual) >= 0;
+}
+
+function compareDecisionBadge(label) {
+  if (label === "PASS") return '<span class="badge badge-pass">PASS</span>';
+  if (label === "FLAG_FOR_HUMAN") return '<span class="badge badge-changed">FLAG</span>';
+  if (label === "REJECT") return '<span class="badge badge-fail">REJECT</span>';
+  return '<span class="badge badge-neutral">' + esc(String(label || "--")) + '</span>';
+}
+
+function comparePassBadge(result) {
+  if (!result) return '<span class="badge badge-neutral">MISSING</span>';
+  return result.passed
+    ? '<span class="badge badge-pass">PASS</span>'
+    : '<span class="badge badge-fail">FAIL</span>';
+}
+
+function compareCaseKind(result) {
+  var tags = (result && result.tags) || [];
+  if (tags.indexOf("golden_path") >= 0) return "golden path";
+  if (tags.indexOf("missing_field") >= 0) return "missing field";
+  if (tags.indexOf("conflict") >= 0) return "conflict";
+  if (tags.indexOf("blocked") >= 0) return "blocked";
+  if (tags.indexOf("longtail") >= 0) return "longtail";
+  return (result && result.scenario) || "--";
+}
+
+function compareResultTools(result) {
+  return result ? (result.tool_calls || []).join(" → ") : "";
+}
+
+function compareDraftFingerprint(result) {
+  return JSON.stringify((result && result.draft_fields) || {});
+}
+
+function compareCaseRowFlags(row) {
+  var a = row.a;
+  var b = row.b;
+  var flags = {
+    missing: !a || !b,
+    aFail: !!(a && !a.passed),
+    bFail: !!(b && !b.passed),
+    bothPass: !!(a && b && a.passed && b.passed),
+    bothFail: !!(a && b && !a.passed && !b.passed),
+    statusDiff: !!(a && b && a.passed !== b.passed),
+    decisionDiff: !!(a && b && (a.decision_label_actual || "") !== (b.decision_label_actual || "")),
+    toolDiff: !!(a && b && compareResultTools(a) !== compareResultTools(b)),
+    draftDiff: !!(a && b && compareDraftFingerprint(a) !== compareDraftFingerprint(b)),
+  };
+  flags.anyDiff = flags.missing || flags.statusDiff || flags.decisionDiff || flags.toolDiff || flags.draftDiff;
+  return flags;
+}
+
+function compareCaseConclusion(row) {
+  var flags = compareCaseRowFlags(row);
+  if (flags.missing) return '<span class="badge badge-neutral">缺结果</span>';
+  if (flags.statusDiff && row.a && row.a.passed && row.b && !row.b.passed) return '<span class="badge badge-regression">B 失败</span>';
+  if (flags.statusDiff && row.a && !row.a.passed && row.b && row.b.passed) return '<span class="badge badge-improvement">B 更好</span>';
+  if (flags.bothFail) return '<span class="badge badge-fail">都失败</span>';
+  if (flags.decisionDiff) return '<span class="badge badge-changed">decision 不同</span>';
+  if (flags.toolDiff) return '<span class="badge badge-changed">tool 不同</span>';
+  if (flags.draftDiff) return '<span class="badge badge-changed">写入不同</span>';
+  return '<span class="badge badge-pass">一致通过</span>';
+}
+
+function compareModelCell(result) {
+  if (!result) return '<div class="case-model-cell"><div class="cell-top"><span class="badge badge-neutral">MISSING</span></div></div>';
+  var failedGraders = (result.graders || []).filter(function(g) { return g.passed === false; });
+  var tools = result.tool_calls || [];
+  return '<div class="case-model-cell">'
+    + '<div class="cell-top">' + comparePassBadge(result) + compareDecisionBadge(result.decision_label_actual) + '</div>'
+    + '<div class="cell-meta">tools ' + tools.length + ' · ' + (result.latency_ms || "--") + 'ms</div>'
+    + (failedGraders.length ? '<div class="cell-meta" style="color:#dc2626">failed: ' + esc(failedGraders.map(function(g) { return g.name; }).join(", ")) + '</div>' : '')
+    + (tools.length ? '<div class="cell-tools" title="' + esc(tools.join(" → ")) + '">' + esc(tools.join(" → ")) + '</div>' : '')
+    + '</div>';
+}
+
+function buildLlmCaseRows(modelA, modelB) {
+  var results = (compareMatrixData && compareMatrixData.results) || [];
+  var byCase = {};
+  var order = [];
+  results.forEach(function(result) {
+    var caseId = result.case_id || "unknown-case";
+    if (!byCase[caseId]) {
+      byCase[caseId] = { caseId: caseId, a: null, b: null, representative: result };
+      order.push(caseId);
+    }
+    if (compareModelMatches(result.model, modelA)) byCase[caseId].a = result;
+    if (compareModelMatches(result.model, modelB)) byCase[caseId].b = result;
+  });
+  return order
+    .map(function(caseId) { return byCase[caseId]; })
+    .filter(function(row) { return row.a || row.b; });
+}
+
+function caseMatrixFilterAllows(row) {
+  var flags = compareCaseRowFlags(row);
+  if (compareCaseFilter === "disagree") return flags.anyDiff;
+  if (compareCaseFilter === "a_fail") return flags.aFail;
+  if (compareCaseFilter === "b_fail") return flags.bFail;
+  if (compareCaseFilter === "decision_diff") return flags.decisionDiff;
+  if (compareCaseFilter === "tool_diff") return flags.toolDiff;
+  if (compareCaseFilter === "write_diff") return flags.draftDiff;
+  return true;
+}
+
+function caseMatrixFilterCounts(rows) {
+  var counts = { all: rows.length, disagree: 0, a_fail: 0, b_fail: 0, decision_diff: 0, tool_diff: 0, write_diff: 0 };
+  rows.forEach(function(row) {
+    var flags = compareCaseRowFlags(row);
+    if (flags.anyDiff) counts.disagree++;
+    if (flags.aFail) counts.a_fail++;
+    if (flags.bFail) counts.b_fail++;
+    if (flags.decisionDiff) counts.decision_diff++;
+    if (flags.toolDiff) counts.tool_diff++;
+    if (flags.draftDiff) counts.write_diff++;
+  });
+  return counts;
+}
+
+function renderCaseMatrixShell() {
+  var counts = caseMatrixFilterCounts(compareCaseRows);
+  var filters = [
+    ["all", "全部", counts.all],
+    ["disagree", "只看不一致", counts.disagree],
+    ["a_fail", "A fail", counts.a_fail],
+    ["b_fail", "B fail", counts.b_fail],
+    ["decision_diff", "decision 不同", counts.decision_diff],
+    ["tool_diff", "tool 不同", counts.tool_diff],
+    ["write_diff", "写入不同", counts.write_diff],
+  ];
+  return '<div class="compare-model-result">'
+    + '<div class="compare-model-result-header">Case Matrix：' + esc(compareCaseRows.length + " 个 case 逐条对比") + '</div>'
+    + '<div class="case-matrix-toolbar">'
+    + filters.map(function(f) {
+        return '<button class="case-matrix-filter' + (compareCaseFilter === f[0] ? " active" : "") + '" onclick="setCaseMatrixFilter(\'' + f[0] + '\')">'
+          + esc(f[1]) + ' <strong>' + f[2] + '</strong></button>';
+      }).join("")
+    + '</div>'
+    + '<table class="eval-table case-matrix-table">'
+    + '<thead><tr><th>Case</th><th>类型</th><th>预期边界</th><th>' + esc(compareCaseModels.a || "Model A") + '</th><th>' + esc(compareCaseModels.b || "Model B") + '</th><th>对比结论</th><th></th></tr></thead>'
+    + '<tbody id="llm-case-matrix-body"></tbody>'
+    + '</table>'
+    + '<div id="llm-case-detail"></div>'
+    + '</div>';
+}
+
+function renderCaseMatrixRows() {
+  var body = document.getElementById("llm-case-matrix-body");
+  if (!body) return;
+  var rows = compareCaseRows.filter(caseMatrixFilterAllows);
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="7" class="empty-state">当前筛选下没有 case。</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map(function(row) {
+    var idx = compareCaseRows.indexOf(row);
+    var rep = row.a || row.b || row.representative || {};
+    return '<tr>'
+      + '<td><code>' + esc(row.caseId) + '</code></td>'
+      + '<td>' + esc(compareCaseKind(rep)) + '</td>'
+      + '<td>' + compareDecisionBadge(rep.decision_label_expected || (rep.expect || {}).decision_label) + '</td>'
+      + '<td>' + compareModelCell(row.a) + '</td>'
+      + '<td>' + compareModelCell(row.b) + '</td>'
+      + '<td>' + compareCaseConclusion(row) + '</td>'
+      + '<td><button class="case-compare-action" onclick="showLlmCaseCompareDetail(' + idx + ')">Detail</button></td>'
+      + '</tr>';
+  }).join("");
+}
+
+function setCaseMatrixFilter(filter) {
+  compareCaseFilter = filter || "all";
+  var shell = document.querySelector(".case-matrix-toolbar");
+  if (shell) {
+    shell.querySelectorAll(".case-matrix-filter").forEach(function(btn) {
+      btn.classList.remove("active");
+    });
+    var active = Array.prototype.slice.call(shell.querySelectorAll(".case-matrix-filter")).find(function(btn) {
+      return btn.getAttribute("onclick") === "setCaseMatrixFilter('" + compareCaseFilter + "')";
+    });
+    if (active) active.classList.add("active");
+  }
+  renderCaseMatrixRows();
+  var detail = document.getElementById("llm-case-detail");
+  if (detail) detail.innerHTML = "";
+}
+
+function compareUserInput(result) {
+  var messages = (result && result.messages) || [];
+  var userMessages = messages.filter(function(m) { return m.role === "user"; }).map(function(m) { return m.content || ""; });
+  return userMessages.join("\n") || "--";
+}
+
+function compareFailedGraders(result) {
+  if (!result) return "--";
+  var failed = (result.graders || []).filter(function(g) { return g.passed === false; });
+  if (!failed.length) return "none";
+  return failed.map(function(g) { return g.name + ": " + (g.message || "failed"); }).join("\n");
+}
+
+function compareTraceSummary(result) {
+  if (!result) return "--";
+  var steps = result.agent_trace_steps || [];
+  if (!steps.length) return "no trace steps";
+  return steps.map(function(step, idx) {
+    var parts = [String(idx + 1) + ".", step.subagent || "orchestrator", step.event || "step"];
+    if (step.tool) parts.push(step.tool);
+    if (step.input) parts.push(JSON.stringify(step.input));
+    if (step.output_summary) parts.push("=> " + step.output_summary);
+    if (step.blocked_reason) parts.push("blocked: " + step.blocked_reason);
+    return parts.join(" ");
+  }).join("\n");
+}
+
+function renderCaseComparePanel(title, result) {
+  if (!result) {
+    return '<div class="case-compare-panel"><div class="case-compare-panel-title">' + esc(title) + '</div><div class="empty-state">这个模型没有该 case 的结果。</div></div>';
+  }
+  return '<div class="case-compare-panel">'
+    + '<div class="case-compare-panel-title">' + esc(title) + ' ' + comparePassBadge(result) + '</div>'
+    + '<div class="compare-stat-row">'
+    + '<span class="compare-stat"><strong>decision</strong> ' + esc(result.decision_label_actual || "--") + '</span>'
+    + '<span class="compare-stat"><strong>tools</strong> ' + ((result.tool_calls || []).length) + '</span>'
+    + '<span class="compare-stat"><strong>latency</strong> ' + (result.latency_ms || "--") + 'ms</span>'
+    + '</div>'
+    + '<div class="case-compare-section"><div class="case-compare-section-label">用户输入</div><pre>' + esc(compareUserInput(result)) + '</pre></div>'
+    + '<div class="case-compare-section"><div class="case-compare-section-label">用户可见回复</div><pre>' + esc(result.assistant_text || "--") + '</pre></div>'
+    + '<div class="case-compare-section"><div class="case-compare-section-label">Tool calls</div><pre>' + esc(compareResultTools(result) || "--") + '</pre></div>'
+    + '<div class="case-compare-section"><div class="case-compare-section-label">Draft fields</div><pre>' + esc(JSON.stringify(result.draft_fields || {}, null, 2)) + '</pre></div>'
+    + '<div class="case-compare-section"><div class="case-compare-section-label">Failed graders</div><pre>' + esc(compareFailedGraders(result)) + '</pre></div>'
+    + '<div class="case-compare-section"><div class="case-compare-section-label">Trace timeline</div><pre>' + esc(compareTraceSummary(result)) + '</pre></div>'
+    + '</div>';
+}
+
+function showLlmCaseCompareDetail(idx) {
+  var row = compareCaseRows[idx];
+  var detail = document.getElementById("llm-case-detail");
+  if (!row || !detail) return;
+  var rep = row.a || row.b || row.representative || {};
+  detail.innerHTML = '<div class="case-compare-detail">'
+    + '<div class="case-compare-detail-header">'
+    + '<div><div class="case-compare-detail-title">' + esc(row.caseId) + '</div>'
+    + '<div class="compare-hint">同一个 case 下，左右分别是两个模型的最终回复、工具调用、写入和 trace。</div></div>'
+    + '<div>' + compareCaseConclusion(row) + ' ' + compareDecisionBadge(rep.decision_label_expected || (rep.expect || {}).decision_label) + '</div>'
+    + '</div>'
+    + '<div class="case-compare-detail-grid">'
+    + renderCaseComparePanel(compareCaseModels.a || "Model A", row.a)
+    + renderCaseComparePanel(compareCaseModels.b || "Model B", row.b)
+    + '</div></div>';
+  detail.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function latestRunForCompareValue(mode, value) {
+  var fallback = compareValueFallback(mode);
+  for (var i = 0; i < allRuns.length; i++) {
+    var run = allRuns[i];
+    var raw = compareRunMetaValue(run, mode);
+    var runValue = raw || fallback;
+    if (runValue === value) return run;
+  }
+  return null;
+}
+
+function renderVariableCompareOptions() {
+  var mode = getCompareMode();
+  var a = document.getElementById("compare-value-a");
+  var b = document.getElementById("compare-value-b");
+  if (!a || !b || mode === "run") return;
+  var currentA = a.value;
+  var currentB = b.value;
+  var values = collectCompareValues(mode);
+  var opts = values.map(function(item) {
+    return '<option value="' + esc(item.value) + '">' + esc(item.label) + "</option>";
+  }).join("");
+  a.innerHTML = opts;
+  b.innerHTML = opts;
+  if (currentA && values.some(function(item) { return item.value === currentA; })) a.value = currentA;
+  if (currentB && values.some(function(item) { return item.value === currentB; })) b.value = currentB;
+  if (!a.value && values.length >= 1) a.selectedIndex = 0;
+  if (!b.value && values.length >= 2) b.selectedIndex = 1;
+}
+
+function renderCompareRunOptions() {
+  var mode = getCompareMode();
+  var a = document.getElementById("compare-a");
+  var b = document.getElementById("compare-b");
+  if (!a || !b) return;
+  var currentA = a.value;
+  var currentB = b.value;
+  var opts = allRuns.map(function(run) {
+    return '<option value="' + esc(run.id) + '">' + esc(compareRunOptionLabel(run, mode)) + "</option>";
+  }).join("");
+  a.innerHTML = opts;
+  b.innerHTML = opts;
+  if (currentA && allRuns.some(function(r) { return r.id === currentA; })) a.value = currentA;
+  if (currentB && allRuns.some(function(r) { return r.id === currentB; })) b.value = currentB;
+  if (!a.value && allRuns.length >= 2) a.selectedIndex = 1;
+  if (!b.value && allRuns.length >= 1) b.selectedIndex = 0;
+}
+
+function updateCompareMode() {
+  var mode = getCompareMode();
+  document.querySelectorAll(".compare-tab").forEach(function(btn) {
+    btn.classList.toggle("active", btn.dataset.compareMode === mode);
+  });
+  var valueSection = document.getElementById("compare-value-section");
+  var llmSection = document.getElementById("compare-llm-section");
+  var runSection = document.getElementById("compare-run-section");
+  var help = document.getElementById("compare-dimension-help");
+  var valueTitle = document.getElementById("compare-value-title");
+  var valueHelp = document.getElementById("compare-value-help");
+  var valueALabel = document.getElementById("compare-value-a-label");
+  var valueBLabel = document.getElementById("compare-value-b-label");
+  var valueButton = document.getElementById("compare-value-button");
+  var runHelp = document.getElementById("compare-run-help");
+  var aLabel = document.getElementById("compare-a-label");
+  var bLabel = document.getElementById("compare-b-label");
+  var diffTarget = document.getElementById("diff-result");
+
+  if (valueSection) valueSection.style.display = mode === "run" ? "none" : "";
+  if (llmSection) llmSection.style.display = mode === "llm" ? "" : "none";
+  if (runSection) runSection.style.display = mode === "run" ? "" : "none";
+
+  if (mode === "llm") {
+    if (help) help.textContent = "选择两个 LLM 后点击运行/比较；如果当前没有这两个模型的最新结果，页面会自动触发 all_scenarios1 baseline eval。";
+    if (valueTitle) valueTitle.textContent = "LLM A vs LLM B";
+    if (valueHelp) valueHelp.textContent = "选择两个 LLM，在同一批 eval case 下比较质量、工具调用、延迟和成本。默认使用 all_scenarios1 baseline。";
+    if (valueALabel) valueALabel.textContent = "LLM A 基线";
+    if (valueBLabel) valueBLabel.textContent = "LLM B 实验";
+    if (valueButton) valueButton.textContent = "运行/比较 LLM A → B";
+    if (diffTarget) diffTarget.innerHTML = '<div class="empty-state">选择两个 LLM 后点击“运行/比较 LLM A → B”。如果没有现成结果，系统会直接跑 eval。</div>';
+  } else if (mode === "prompt") {
+    if (help) help.textContent = "跨 run 比较 prompt version。A 选旧 prompt，B 选新 prompt；重点看 case regression 和 tool-call 行为是否变化。";
+    if (valueTitle) valueTitle.textContent = "Prompt version A vs Prompt version B";
+    if (valueHelp) valueHelp.textContent = "选择两个 prompt version。系统会用各自最新一次 eval run 做 A/B 对比。";
+    if (valueALabel) valueALabel.textContent = "Prompt version A";
+    if (valueBLabel) valueBLabel.textContent = "Prompt version B";
+    if (valueButton) valueButton.textContent = "比较 Prompt A → B";
+    if (diffTarget && !diffTarget.dataset.userCompared) diffTarget.innerHTML = '<div class="empty-state">选择两个 Prompt version 后点击“比较 Prompt A → B”。</div>';
+  } else if (mode === "dataset") {
+    if (help) help.textContent = "跨 run 比较数据集。A 选旧数据集或旧时间点，B 选新数据集或新时间点；重点看新增 case 是否打破原来的表现。";
+    if (valueTitle) valueTitle.textContent = "Dataset A vs Dataset B";
+    if (valueHelp) valueHelp.textContent = "选择两个 dataset 名称、版本或 hash。系统会用各自最新一次 eval run 做 A/B 对比。";
+    if (valueALabel) valueALabel.textContent = "Dataset A";
+    if (valueBLabel) valueBLabel.textContent = "Dataset B";
+    if (valueButton) valueButton.textContent = "比较 Dataset A → B";
+    if (diffTarget && !diffTarget.dataset.userCompared) diffTarget.innerHTML = '<div class="empty-state">选择两个 Dataset 后点击“比较 Dataset A → B”。</div>';
+  } else {
+    if (help) help.textContent = "完整跨 run A/B。适合同时改了模型、prompt、工具规则或数据集，只是归因会更粗。";
+    if (runHelp) runHelp.textContent = "用来回答一个非常具体的问题：这次换模型、改 prompt、改 tool policy 或换数据集之后，结果有没有变好或变坏？";
+    if (aLabel) aLabel.textContent = "Run A 基线 / 旧版本";
+    if (bLabel) bLabel.textContent = "Run B 实验 / 新版本";
+    if (diffTarget && !diffTarget.dataset.userCompared) diffTarget.innerHTML = '<div class="empty-state">选择两个不同的 run 后点击“比较 A → B”。</div>';
+  }
+  renderVariableCompareOptions();
+  renderCompareRunOptions();
+}
+
+function populateCompareModelSelectors(data) {
+  compareMatrixData = data;
+  renderVariableCompareOptions();
+}
+
+function compareDefaultDatasetId() {
+  var datasets = chatbotDatasetOptions || [];
+  var exact = datasets.find(function(ds) { return (ds.id || ds.name) === DEFAULT_COMPARE_DATASET_ID; });
+  var baseline = datasets.find(function(ds) { return !!ds.baseline; });
+  var chosen = exact || baseline || datasets[0];
+  return chosen ? (chosen.id || chosen.name) : DEFAULT_COMPARE_DATASET_ID;
+}
+
+function setCompareValueButtonRunning(isRunning) {
+  var btn = document.getElementById("compare-value-button");
+  if (!btn) return;
+  btn.disabled = isRunning;
+  btn.textContent = isRunning ? "Eval running..." : "运行/比较 LLM A → B";
+}
+
+function compareRunProgressHtml(modelA, modelB, datasetId, note) {
+  return '<div class="compare-model-result">'
+    + '<div class="compare-model-result-header">正在运行 LLM A/B eval</div>'
+    + '<div class="compare-note">'
+    + '<strong>' + esc(modelA) + '</strong> vs <strong>' + esc(modelB) + '</strong>'
+    + ' · dataset: <code>' + esc(datasetId) + '</code><br>'
+    + esc(note || "系统正在触发后端 eval runner。跑完后会自动刷新 30 行 case-by-case 对比表。")
+    + '</div>'
+    + '</div>';
+}
+
+function waitForEvalTriggerToFinish(timeoutMs) {
+  var started = Date.now();
+  return new Promise(function(resolve, reject) {
+    var poll = setInterval(async function() {
+      try {
+        var r = await fetch(API + "/api/eval/trigger/status");
+        var data = await r.json();
+        if (!data.running) {
+          clearInterval(poll);
+          resolve(true);
+          return;
+        }
+        if (Date.now() - started > timeoutMs) {
+          clearInterval(poll);
+          reject(new Error("Eval 运行超过预期时间，请稍后刷新或检查后端日志。"));
+        }
+      } catch (e) {
+        clearInterval(poll);
+        reject(e);
+      }
+    }, 2000);
+  });
+}
+
+async function refreshCompareMatrixData() {
+  var r = await fetch(API + "/api/eval/chatbot/model-matrix");
+  var data = await r.json();
+  populateCompareModelSelectors(data);
+  try {
+    renderChatbotModelMatrix(data, "compare-llm-matrix", { hideSuite: true });
+  } catch (e) {}
+  return data;
+}
+
+async function triggerSelectedLlmCompareEval(modelA, modelB) {
+  var diff = document.getElementById("diff-result");
+  var datasetId = compareDefaultDatasetId();
+  if (diff) {
+    diff.dataset.userCompared = "1";
+    diff.innerHTML = compareRunProgressHtml(modelA, modelB, datasetId, "正在提交 eval run。你不用回 terminal 跑 pytest。");
+  }
+  setCompareValueButtonRunning(true);
+  try {
+    var r = await fetch(API + "/api/eval/trigger", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        component: "unified_expense_assistant",
+        models: [modelA, modelB],
+        datasets: [datasetId],
+      }),
+    });
+    var data = await r.json();
+    if (data.status === "already_running") {
+      if (diff) {
+        diff.innerHTML = compareRunProgressHtml(modelA, modelB, datasetId, "已有 eval 正在运行。我会等它结束后刷新结果。");
+      }
+    } else if (data.status !== "started") {
+      throw new Error(data.error || data.status || "Eval trigger failed");
+    } else if (diff) {
+      diff.innerHTML = compareRunProgressHtml(modelA, modelB, datasetId, "已开始运行。完成后会自动刷新。");
+    }
+    await waitForEvalTriggerToFinish(15 * 60 * 1000);
+    await refreshCompareMatrixData();
+    await compareSelectedModels({ autoRun: false });
+  } catch (e) {
+    if (diff) {
+      diff.innerHTML = '<div class="empty-state">Eval 没有成功完成：' + esc(e.message || String(e)) + '</div>';
+    }
+  } finally {
+    setCompareValueButtonRunning(false);
+  }
+}
+
+async function compareSelectedModels(options) {
+  options = options || {};
+  var diff = document.getElementById("diff-result");
+  var modelA = document.getElementById("compare-value-a").value;
+  var modelB = document.getElementById("compare-value-b").value;
+  if (!modelA || !modelB || !diff) return;
+  if (modelA === modelB) {
+    diff.innerHTML = '<div class="empty-state">请选择两个不同 LLM。</div>';
+    return;
+  }
+  var a = resolveCompareModelMetrics(modelA);
+  var b = resolveCompareModelMetrics(modelB);
+  if (!a || !b) {
+    if (options.autoRun !== false) {
+      await triggerSelectedLlmCompareEval(modelA, modelB);
+      return;
+    }
+    diff.innerHTML = '<div class="empty-state">'
+      + '当前最新 model-matrix 还没有 <strong>' + esc(modelA) + '</strong> 和 <strong>' + esc(modelB) + '</strong> 的完整结果。'
+      + '刚才的 eval 可能失败了，或模型名称没有写入结果。请检查 API key / 后端日志，然后重新点击运行。'
+      + '</div>';
+    return;
+  }
+  function fmtPct(v) { return v == null ? "--" : (v * 100).toFixed(0) + "%"; }
+  function fmtMoney(v) { return "$" + Number(v || 0).toFixed(6); }
+  function verdictHtml() {
+    var passDelta = a.pass_rate != null && b.pass_rate != null ? (b.pass_rate - a.pass_rate) * 100 : 0;
+    var latencyDelta = Number(b.avg_latency_ms || 0) - Number(a.avg_latency_ms || 0);
+    var costDelta = Number(b.total_cost_estimate_usd || 0) - Number(a.total_cost_estimate_usd || 0);
+    var cls = passDelta < 0 ? "bad" : passDelta > 0 ? "good" : "neutral";
+    var title = passDelta < 0
+      ? "结论：B 有质量退步，先不要替换"
+      : passDelta > 0
+        ? "结论：B 质量更好，可以继续看成本"
+        : "结论：质量持平，重点看成本和延迟";
+    var body = "通过率变化 " + (passDelta > 0 ? "+" : "") + passDelta.toFixed(1) + "pp"
+      + " · 延迟变化 " + (latencyDelta > 0 ? "+" : "") + latencyDelta.toFixed(0) + "ms"
+      + " · 成本变化 $" + (costDelta > 0 ? "+" : "") + costDelta.toFixed(6) + "。";
+    return '<div class="compare-verdict ' + cls + '"><div class="compare-verdict-title">' + esc(title) + '</div>'
+      + '<div class="compare-verdict-body">' + esc(body) + '</div></div>';
+  }
+  function deltaNumber(va, vb, suffix, lowerIsBetter) {
+    if (va == null || vb == null) return "--";
+    var d = vb - va;
+    var cls = d === 0 ? "var(--gray-500)" : ((lowerIsBetter ? d < 0 : d > 0) ? "#16a34a" : "#dc2626");
+    var sign = d > 0 ? "+" : "";
+    return '<span style="color:' + cls + '; font-weight:800">' + sign + d.toFixed(2) + suffix + "</span>";
+  }
+  function deltaPct(va, vb) {
+    if (va == null || vb == null) return "--";
+    var d = (vb - va) * 100;
+    var cls = d === 0 ? "var(--gray-500)" : (d > 0 ? "#16a34a" : "#dc2626");
+    var sign = d > 0 ? "+" : "";
+    return '<span style="color:' + cls + '; font-weight:800">' + sign + d.toFixed(1) + "pp</span>";
+  }
+  diff.innerHTML = '<div class="compare-model-result">'
+    + verdictHtml()
+    + '<div class="compare-model-result-header">Model A → Model B：' + esc(modelA) + " → " + esc(modelB) + '</div>'
+    + '<table class="eval-table">'
+    + '<thead><tr><th>指标</th><th>Model A</th><th>Model B</th><th>B 相比 A</th></tr></thead>'
+    + '<tbody>'
+    + '<tr><td>通过率</td><td>' + fmtPct(a.pass_rate) + '</td><td>' + fmtPct(b.pass_rate) + '</td><td>' + deltaPct(a.pass_rate, b.pass_rate) + '</td></tr>'
+    + '<tr><td>通过 case</td><td>' + (a.passed_cases || 0) + ' / ' + (a.total_cases || 0) + '</td><td>' + (b.passed_cases || 0) + ' / ' + (b.total_cases || 0) + '</td><td>' + deltaNumber(a.passed_cases || 0, b.passed_cases || 0, "", false) + '</td></tr>'
+    + '<tr><td>平均 tool calls</td><td>' + Number(a.avg_tool_calls || 0).toFixed(2) + '</td><td>' + Number(b.avg_tool_calls || 0).toFixed(2) + '</td><td>' + deltaNumber(a.avg_tool_calls || 0, b.avg_tool_calls || 0, "", true) + '</td></tr>'
+    + '<tr><td>平均延迟</td><td>' + Number(a.avg_latency_ms || 0).toFixed(0) + ' ms</td><td>' + Number(b.avg_latency_ms || 0).toFixed(0) + ' ms</td><td>' + deltaNumber(a.avg_latency_ms || 0, b.avg_latency_ms || 0, " ms", true) + '</td></tr>'
+    + '<tr><td>估算成本</td><td>' + fmtMoney(a.total_cost_estimate_usd) + '</td><td>' + fmtMoney(b.total_cost_estimate_usd) + '</td><td>' + deltaNumber(a.total_cost_estimate_usd || 0, b.total_cost_estimate_usd || 0, "", true) + '</td></tr>'
+    + '</tbody></table></div>';
+  compareCaseModels = { a: modelA, b: modelB };
+  compareCaseFilter = "all";
+  compareCaseRows = buildLlmCaseRows(modelA, modelB);
+  diff.insertAdjacentHTML("beforeend", renderCaseMatrixShell());
+  renderCaseMatrixRows();
+}
+
+async function runVariableCompare() {
+  var mode = getCompareMode();
+  if (mode === "llm") {
+    await compareSelectedModels({ autoRun: true });
+    return;
+  }
+  var valueA = document.getElementById("compare-value-a").value;
+  var valueB = document.getElementById("compare-value-b").value;
+  var diffTarget = document.getElementById("diff-result");
+  if (!valueA || !valueB) return;
+  if (valueA === valueB) {
+    diffTarget.innerHTML = '<div class="empty-state">请选择两个不同的 ' + (mode === "prompt" ? "prompt version" : "dataset") + '。</div>';
+    return;
+  }
+  var runA = latestRunForCompareValue(mode, valueA);
+  var runB = latestRunForCompareValue(mode, valueB);
+  if (!runA || !runB) {
+    diffTarget.innerHTML = '<div class="empty-state">没有找到对应的 eval run。需要先跑并记录这个 ' + (mode === "prompt" ? "prompt version" : "dataset") + ' 的 eval。</div>';
+    return;
+  }
+  await runDiffForIds(runA.id, runB.id);
+}
+
 async function loadCompareSelectors() {
-  loadCompareLlmMatrix();
+  await loadChatbotDatasetOptions();
+  await loadCompareLlmMatrix();
   if (allRuns.length === 0) {
     try {
       var r = await fetch(API + "/api/eval/runs?page=1&page_size=50");
@@ -2031,25 +4320,37 @@ async function loadCompareSelectors() {
       allRuns = data.items || [];
     } catch (e) { return; }
   }
-  var opts = allRuns.map(function(run) {
-    var m = run.metadata || {};
-    var runWhat = (run.trigger || "manual") + " · " + (m.model || "?") + " · " + (run.total_cases || 0) + " cases";
-    var label = fmtTime(run.started_at) + " | " + (run.pass_rate * 100).toFixed(0) + "% | " + runWhat;
-    return '<option value="' + run.id + '">' + label + "</option>";
-  }).join("");
-  document.getElementById("compare-a").innerHTML = opts;
-  document.getElementById("compare-b").innerHTML = opts;
+  renderCompareRunOptions();
   if (allRuns.length >= 2) {
     document.getElementById("compare-a").selectedIndex = 1;
     document.getElementById("compare-b").selectedIndex = 0;
+    var result = document.getElementById("diff-result");
+    if (result && !result.dataset.userCompared) {
+      result.innerHTML = '<div class="empty-state">默认已选择最近两次 run。点击“比较 A → B”查看哪些 case 变好、变差或配置发生变化。</div>';
+    }
+  } else {
+    var oneResult = document.getElementById("diff-result");
+    if (oneResult) {
+      oneResult.innerHTML = '<div class="empty-state">至少需要两次 eval run 才能做 A/B 对比。现在只能查看上面的最近一次模型汇总。</div>';
+    }
   }
+  updateCompareMode();
 }
 
 async function loadCompareLlmMatrix() {
   try {
     var r = await fetch(API + "/api/eval/chatbot/model-matrix");
     var data = await r.json();
-    renderChatbotModelMatrix(data, "compare-llm-matrix");
+    renderChatbotModelMatrix(data, "compare-llm-matrix", { hideSuite: true });
+    populateCompareModelSelectors(data);
+    var target = document.getElementById("compare-llm-matrix");
+    if (target && data && !data.empty) {
+      var modelCount = Object.keys(data.by_model || {}).length;
+      var note = modelCount > 1
+        ? '<strong>这里是在同一次 eval run 内比较不同 LLM。</strong>下面的 By Model 才能回答“哪个模型效果/成本/延迟更好”。'
+        : '<strong>当前最近一次只跑了 1 个模型。</strong>选择两个 LLM 后点击“运行/比较”，页面会自动触发一次双模型 eval。';
+      target.insertAdjacentHTML("afterbegin", '<div class="compare-note">' + note + '</div>');
+    }
   } catch (e) {
     console.error("loadCompareLlmMatrix:", e);
     var target = document.getElementById("compare-llm-matrix");
@@ -2060,31 +4361,82 @@ async function loadCompareLlmMatrix() {
 async function runDiff() {
   var idA = document.getElementById("compare-a").value;
   var idB = document.getElementById("compare-b").value;
+  await runDiffForIds(idA, idB);
+}
+
+async function runDiffForIds(idA, idB) {
   if (!idA || !idB) return;
-  if (idA === idB) { document.getElementById("diff-result").innerHTML = '<div class="empty-state">Please select two different runs.</div>'; return; }
+  var diffTarget = document.getElementById("diff-result");
+  if (idA === idB) {
+    diffTarget.innerHTML = '<div class="empty-state">请选择两个不同的 run。A 是旧版本/基线，B 是新版本/实验。</div>';
+    return;
+  }
+  diffTarget.dataset.userCompared = "1";
   try {
     var r = await fetch(API + "/api/eval/runs/" + idA + "/diff/" + idB);
     var diff = await r.json();
-    if (diff.error) { document.getElementById("diff-result").innerHTML = '<div class="empty-state">' + esc(diff.error) + "</div>"; return; }
+    if (diff.error) { diffTarget.innerHTML = '<div class="empty-state">' + esc(diff.error) + "</div>"; return; }
 
     var s = diff.summary;
     var html = '<div class="trace-detail">';
-    html += '<div style="display:flex; gap:1rem; margin-bottom:1rem; font-size:.82rem">'
-      + "<span><strong>Metadata changes:</strong> " + s.metadata_changes + "</span>"
-      + ' <span class="badge badge-improvement">+' + s.improvements + " improved</span>"
-      + ' <span class="badge badge-regression">' + s.regressions + " regressed</span></div>";
-
     var raRate = diff.run_a.pass_rate != null ? (diff.run_a.pass_rate * 100).toFixed(0) + "%" : "--";
     var rbRate = diff.run_b.pass_rate != null ? (diff.run_b.pass_rate * 100).toFixed(0) + "%" : "--";
+    var passDelta = diff.run_a.pass_rate != null && diff.run_b.pass_rate != null ? (diff.run_b.pass_rate - diff.run_a.pass_rate) * 100 : 0;
+    var metaA = diff.run_a.metadata || {};
+    var metaB = diff.run_b.metadata || {};
+    var modelA = metaA.model || (metaA.models || []).join(", ") || "--";
+    var modelB = metaB.model || (metaB.models || []).join(", ") || "--";
+    var datasetA = metaA.dataset_name || metaA.dataset || "--";
+    var datasetB = metaB.dataset_name || metaB.dataset || "--";
+    var compareWarnings = [];
+    var hasMockSide = String(modelA + " " + modelB).toLowerCase().indexOf("mock") >= 0;
+    if (datasetA !== datasetB || diff.run_a.total !== diff.run_b.total) {
+      compareWarnings.push("A/B 不是同一批 case：A 是 " + datasetA + "（" + diff.run_a.total + " cases），B 是 " + datasetB + "（" + diff.run_b.total + " cases）。");
+    }
+    if (hasMockSide) {
+      compareWarnings.push("其中一边是 mock-scripted-baseline，它是脚本基线，不是真实 LLM，不能把它当成模型能力对比。");
+    }
+    if (modelA !== modelB && datasetA !== datasetB) {
+      compareWarnings.push("模型和数据集同时变了，所以 improvement/regression 只能说明两次 run 结果不同，不能归因到某一个模型。");
+    }
+    var hasAttributionWarning = compareWarnings.length > 0;
+    var verdictCls = hasAttributionWarning ? "neutral" : (s.regressions > 0 ? "bad" : s.improvements > 0 ? "good" : "neutral");
+    var verdictTitle = hasAttributionWarning
+      ? "结论：这不是干净 A/B，先不要把 improvement 当成模型变好"
+      : s.regressions > 0
+        ? "结论：B 出现 regression，先别合并这个改动"
+        : s.improvements > 0
+          ? "结论：B 有 improvement，可以继续看成本/trace"
+          : "结论：case 结果持平，重点看 metadata 和成本变化";
+    html += '<div class="compare-verdict ' + verdictCls + '">'
+      + '<div class="compare-verdict-title">' + esc(verdictTitle) + '</div>'
+      + '<div class="compare-verdict-body">通过率变化 ' + (passDelta > 0 ? "+" : "") + passDelta.toFixed(1)
+      + 'pp · regression ' + s.regressions + ' · improvement ' + s.improvements
+      + ' · metadata changes ' + s.metadata_changes + '。</div></div>';
+    if (compareWarnings.length) {
+      html += '<div class="compare-warning"><strong>为什么这里看起来 FAIL 很多：</strong><br>'
+        + compareWarnings.map(function(w) { return "• " + esc(w); }).join("<br>")
+        + '<br>红色 FAIL 表示 Run A 当时失败；绿色 PASS 表示 Run B 当时通过。它不是在说当前最新代码又失败了。</div>';
+    }
+    html += '<div class="compare-result-header">'
+      + '<div><div class="comp-section-title">A → B 差异结果</div>'
+      + '<div class="compare-hint">A 是基线，B 是实验。这里重点看 B 相比 A 有没有 regression。</div></div>'
+      + '<div class="compare-stat-row">'
+      + '<span class="compare-stat"><strong>配置变化</strong> ' + s.metadata_changes + '</span>'
+      + '<span class="compare-stat"><strong style="color:#16a34a">变好</strong> ' + s.improvements + '</span>'
+      + '<span class="compare-stat"><strong style="color:#dc2626">变差</strong> ' + s.regressions + '</span>'
+      + '</div></div>';
     html += '<div class="diff-grid">'
-      + '<div class="diff-col"><div class="diff-col-header">Run A: ' + fmtTime(diff.run_a.started_at) + " (" + raRate + ")</div></div>"
-      + '<div class="diff-col"><div class="diff-col-header">Run B: ' + fmtTime(diff.run_b.started_at) + " (" + rbRate + ")</div></div></div>";
+      + '<div class="diff-col"><div class="diff-col-header">Run A 基线：' + fmtTime(diff.run_a.started_at) + "（通过率 " + raRate + "）</div>"
+      + '<div class="compare-hint">模型：' + esc(modelA) + ' · 数据集：' + esc(datasetA) + ' · Cases：' + esc(String(diff.run_a.total || "--")) + '</div></div>'
+      + '<div class="diff-col"><div class="diff-col-header">Run B 实验：' + fmtTime(diff.run_b.started_at) + "（通过率 " + rbRate + "）</div>"
+      + '<div class="compare-hint">模型：' + esc(modelB) + ' · 数据集：' + esc(datasetB) + ' · Cases：' + esc(String(diff.run_b.total || "--")) + '</div></div></div>';
 
     // Metadata diff
     var metaKeys = Object.keys(diff.metadata_diff);
     if (metaKeys.length > 0) {
-      html += '<div style="margin:1rem 0"><strong style="font-size:.82rem">Changed Factors</strong>'
-        + '<table class="eval-table" style="margin-top:.4rem"><thead><tr><th>Factor</th><th>Run A</th><th>Run B</th></tr></thead><tbody>';
+      html += '<div style="margin:1rem 0"><strong style="font-size:.82rem">配置变化：为什么两次 run 不一样</strong>'
+        + '<table class="eval-table" style="margin-top:.4rem"><thead><tr><th>变化项</th><th>Run A 基线</th><th>Run B 实验</th></tr></thead><tbody>';
       metaKeys.forEach(function(k) {
         var d = diff.metadata_diff[k];
         var va = typeof d.a === "object" ? JSON.stringify(d.a) : String(d.a != null ? d.a : "--");
@@ -2095,6 +4447,8 @@ async function runDiff() {
           + '<td class="diff-val-new">' + esc(vb) + "</td></tr>";
       });
       html += "</tbody></table></div>";
+    } else {
+      html += '<div class="compare-empty-detail">两次 run 的 metadata 没有记录到差异。如果你明明换了模型或 prompt，但这里没有变化，说明 run metadata 还没有把那项配置写进去。</div>';
     }
 
     // P/R delta
@@ -2133,8 +4487,8 @@ async function runDiff() {
 
     // Case diff
     if (diff.case_diff.length > 0) {
-      html += '<div style="margin:1rem 0"><strong style="font-size:.82rem">Case Result Changes</strong>'
-        + '<table class="eval-table" style="margin-top:.4rem"><thead><tr><th>Case</th><th>Run A</th><th>Run B</th><th>Change</th></tr></thead><tbody>';
+      html += '<div style="margin:1rem 0"><strong style="font-size:.82rem">Case 结果变化：最应该看的部分</strong>'
+        + '<table class="eval-table" style="margin-top:.4rem"><thead><tr><th>Case</th><th>Run A 基线</th><th>Run B 实验</th><th>变化</th></tr></thead><tbody>';
       diff.case_diff.forEach(function(c) {
         var isReg = c.a === true && c.b === false;
         var isImp = c.a === false && c.b === true;
@@ -2147,10 +4501,12 @@ async function runDiff() {
           + "<td>" + badge + "</td></tr>";
       });
       html += "</tbody></table></div>";
+    } else {
+      html += '<div class="compare-empty-detail">没有 case 从 PASS 变 FAIL，也没有从 FAIL 变 PASS。也就是说，这两次 run 在 case 通过/失败层面没有看到 regression 或 improvement。</div>';
     }
 
     html += "</div>";
-    document.getElementById("diff-result").innerHTML = html;
+    diffTarget.innerHTML = html;
   } catch (e) { console.error("runDiff:", e); }
 }
 
@@ -2164,7 +4520,7 @@ function openRunEvalModal(compKey) {
   var def = COMP_DEFS[compKey] || {name: compKey};
   document.getElementById("run-eval-title").textContent = "Run Eval: " + def.name;
   document.getElementById("run-eval-subtitle").textContent =
-    "Choose up to 2 LLMs. The dataset picker is intentionally empty for now.";
+    "Choose up to 2 LLMs and, for the expense assistant, an eval dataset set.";
   var target = document.getElementById("run-eval-models");
   target.innerHTML = RUN_EVAL_MODELS.map(function(model, idx) {
     var checked = idx === 0 ? " checked" : "";
@@ -2174,6 +4530,7 @@ function openRunEvalModal(compKey) {
       + "</label>";
   }).join("");
   enforceModelLimit();
+  renderRunEvalDatasets(compKey);
   document.getElementById("run-eval-model-select").classList.remove("open");
   document.getElementById("run-eval-modal").style.display = "flex";
 }
@@ -2213,6 +4570,62 @@ function enforceModelLimit() {
   }
 }
 
+async function loadChatbotDatasetOptions() {
+  if (chatbotDatasetOptions !== null) return chatbotDatasetOptions;
+  try {
+    var r = await fetch(API + "/api/eval/chatbot/datasets");
+    var data = await r.json();
+    chatbotDatasetOptions = data.items || [];
+  } catch (e) {
+    chatbotDatasetOptions = [];
+  }
+  return chatbotDatasetOptions;
+}
+
+async function renderRunEvalDatasets(compKey) {
+  var target = document.getElementById("run-eval-datasets");
+  var counter = document.getElementById("run-eval-dataset-count");
+  if (!target) return;
+  if (compKey !== "chat") {
+    target.innerHTML = '<div class="empty-state" style="padding:1rem;">Dataset sets are only used by the Unified Expense Assistant eval.</div>';
+    if (counter) counter.textContent = "This component uses its own fixed eval cases.";
+    return;
+  }
+  target.innerHTML = '<div class="empty-state" style="padding:1rem;">Loading datasets...</div>';
+  var datasets = await loadChatbotDatasetOptions();
+  if (!datasets.length) {
+    target.innerHTML = '<div class="empty-state" style="padding:1rem;">No named dataset sets found. Current run will use the full unified suite.</div>';
+    if (counter) counter.textContent = "No dataset selected = full unified suite";
+    return;
+  }
+  target.innerHTML = datasets.map(function(ds, idx) {
+    var checked = idx === 0 ? " checked" : "";
+    var title = ds.id || ds.name || "unknown_dataset";
+    var baselineBadge = ds.baseline ? '<span class="baseline-badge">baseline</span>' : "";
+    var countText = ds.case_count != null ? ds.case_count + " cases" : "";
+    if (ds.expected_case_count && ds.case_count !== ds.expected_case_count) {
+      countText += " · expected " + ds.expected_case_count;
+    }
+    var desc = (ds.description || "") + (countText ? " · " + countText : "");
+    return '<label class="eval-choice">'
+      + '<span><span class="eval-choice-name">' + esc(title) + '</span>' + baselineBadge
+      + '<span class="eval-dataset-desc">' + esc(desc || "Named eval dataset set") + '</span></span>'
+      + '<input type="checkbox" value="' + esc(title) + '"' + checked + ' onchange="updateRunEvalDatasetCount()">'
+      + "</label>";
+  }).join("");
+  updateRunEvalDatasetCount();
+}
+
+function updateRunEvalDatasetCount() {
+  var selected = Array.prototype.slice.call(document.querySelectorAll("#run-eval-datasets input:checked"));
+  var counter = document.getElementById("run-eval-dataset-count");
+  if (counter) {
+    counter.textContent = selected.length
+      ? "Selected " + selected.length + " dataset set(s): " + selected.map(function(input) { return input.value; }).join(", ")
+      : "No dataset selected = full unified suite";
+  }
+}
+
 async function startConfiguredEval() {
   var compKey = pendingRunEvalCompKey || "chat";
   var selectedModels = Array.prototype.slice.call(
@@ -2226,6 +4639,9 @@ async function startConfiguredEval() {
     alert("Please choose at most two LLMs.");
     return;
   }
+  var selectedDatasets = Array.prototype.slice.call(
+    document.querySelectorAll("#run-eval-datasets input:checked")
+  ).map(function(input) { return input.value; });
   closeRunEvalModal();
 
   var btn = document.getElementById("run-eval-btn-" + compKey);
@@ -2245,7 +4661,7 @@ async function startConfiguredEval() {
       body: JSON.stringify({
         component: component,
         models: selectedModels,
-        datasets: [],
+        datasets: component === "unified_expense_assistant" ? selectedDatasets : [],
       }),
     });
     var data = await r.json();
@@ -2255,7 +4671,8 @@ async function startConfiguredEval() {
       btn.disabled = false;
       return;
     }
-    status.textContent = "Eval started: " + component + " | " + selectedModels.join(", ");
+    status.textContent = "Eval started: " + component + " | " + selectedModels.join(", ")
+      + (selectedDatasets.length ? " | datasets: " + selectedDatasets.join(", ") : "");
     // Poll for completion
     pollEvalStatus(compKey);
   } catch (e) {

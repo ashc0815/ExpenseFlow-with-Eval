@@ -56,6 +56,7 @@ def _sub_dict(sub) -> dict[str, Any]:
 
         # ── AI 审核 ──
         "ocr_data": sub.ocr_data,
+        "field_sources": (sub.ocr_data or {}).get("field_sources", {}) if sub.ocr_data else {},
         "audit_report": sub.audit_report,
         "risk_score": float(sub.risk_score) if sub.risk_score else None,
         "tier": sub.tier,
@@ -128,6 +129,7 @@ async def _run_pipeline(submission_id: str, form_data: dict) -> None:
             currency=form_data.get("currency", "CNY"),
             city=(form_data.get("city") or "上海"),
             date=expense_date,
+            field_sources=dict(form_data.get("field_sources") or {}),
             invoice=Invoice(
                 invoice_code=form_data.get("invoice_code") or "310012135012",
                 invoice_number=form_data.get("invoice_number") or "12345678",

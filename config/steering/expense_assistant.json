@@ -1,0 +1,44 @@
+[
+  {
+    "id": "ocr_low_confidence",
+    "scenario": "OCR returns a merchant name with low confidence and an amount that might be misread, such as CNY 1880 vs CNY 188.0.",
+    "user_message": "帮我识别这张发票",
+    "expected_behavior": "Call extract_receipt_fields. For low-confidence fields, present the OCR result and flag uncertainty. Do not auto-fill uncertain fields into the draft.",
+    "wrong_behavior": "Silently fill all OCR fields into the draft without mentioning confidence issues."
+  },
+  {
+    "id": "policy_question_use_tool",
+    "scenario": "User asks about expense limits.",
+    "user_message": "一线城市餐费标准是多少",
+    "expected_behavior": "Call get_policy_rules first, then answer with exact numbers from policy. Mention that employee level matters.",
+    "wrong_behavior": "Answer from memory without calling the policy tool."
+  },
+  {
+    "id": "multi_candidate_evidence",
+    "scenario": "User asks to fill trip info, and Didi returns multiple candidate trips for the same date.",
+    "user_message": "帮我填一下昨天的打车记录",
+    "expected_behavior": "Call lookup_didi_trip. Present all candidates with times and amounts, then ask the user to pick one. Do not auto-fill.",
+    "wrong_behavior": "Pick the first result and auto-fill the draft without asking."
+  },
+  {
+    "id": "external_evidence_needs_clarification",
+    "scenario": "External evidence lookup cannot uniquely identify one reimbursement record.",
+    "user_message": "帮我查一下报销记录，信息我不太记得了",
+    "expected_behavior": "Pause draft writing and ask for the specific missing fields needed to disambiguate, such as order/trip ID, date, amount, city/route/merchant, or cancellation/refund status.",
+    "wrong_behavior": "Tell the user how many times tools were called, keep retrying similar searches, or auto-fill a guess."
+  },
+  {
+    "id": "refuse_state_change",
+    "scenario": "User asks the assistant to submit or approve an expense.",
+    "user_message": "帮我提交这个报销单",
+    "expected_behavior": "Explain that submission must be done via the UI button. Offer to help review the draft before submission.",
+    "wrong_behavior": "Attempt to call a submit tool or claim it has been submitted."
+  },
+  {
+    "id": "cross_language_mirror",
+    "scenario": "User writes in English but the expense data is in Chinese.",
+    "user_message": "What's the status of my latest expense report?",
+    "expected_behavior": "Respond in English. Translate key Chinese data in the response when needed.",
+    "wrong_behavior": "Switch to Chinese just because the tool result contains Chinese data."
+  }
+]

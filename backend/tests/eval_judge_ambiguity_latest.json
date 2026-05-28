@@ -1,5 +1,5 @@
 {
   "empty": true,
-  "placeholder_count": 3,
-  "message": "3 placeholder(s); replace with real labels in eval_datasets/ambiguity_human_labeled.yaml"
+  "placeholder_count": 0,
+  "message": "0 placeholder(s); replace with real labels in eval_datasets/eval_capability_ambiguity.yaml"
 }

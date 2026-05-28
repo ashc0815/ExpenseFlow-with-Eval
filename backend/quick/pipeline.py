@@ -6,7 +6,7 @@ from typing import AsyncIterator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.middleware.auth import UserContext
-from backend.api.routes.chat import (
+from backend.agents.expense_assistant.tool_handlers import (
     tool_extract_receipt_fields,
     tool_suggest_category,
     tool_check_duplicate_invoice,

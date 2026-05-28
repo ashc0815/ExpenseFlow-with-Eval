@@ -19,6 +19,8 @@ import sys
 import tempfile
 import time
 import uuid
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -55,11 +57,13 @@ from backend.tests.graders.code_graders import (
     grade_response_excludes,
     grade_required_subagents,
     grade_tool_args,
+    grade_trace_shape,
 )
 
 
 _TEST_DIR = Path(__file__).resolve().parent
 _DATASET_PATH = _TEST_DIR / "eval_datasets" / "chatbot_expense_assistant.yaml"
+_DATASET_SETS_PATH = _TEST_DIR / "eval_datasets" / "chatbot_dataset_sets.yaml"
 _OUT_PATH = _TEST_DIR / "eval_chatbot_model_matrix_latest.json"
 
 _engine = create_async_engine(_DB_URL)
@@ -68,6 +72,7 @@ _Session = async_sessionmaker(_engine, expire_on_commit=False)
 
 def _load_cases() -> list[dict]:
     cases = yaml.safe_load(_DATASET_PATH.read_text(encoding="utf-8")) or []
+    dataset_sets = _load_dataset_sets()
     requested = [
         name.strip()
         for name in os.getenv("CHATBOT_EVAL_DATASETS", "").split(",")
@@ -75,8 +80,73 @@ def _load_cases() -> list[dict]:
     ]
     if requested:
         allowed = set(requested)
-        cases = [c for c in cases if c.get("suite") in allowed or c.get("scenario") in allowed]
+        cases = [c for c in cases if _case_matches_dataset_filter(c, allowed, dataset_sets)]
     return cases
+
+
+def _load_dataset_sets() -> dict[str, dict]:
+    if not _DATASET_SETS_PATH.exists():
+        return {}
+    rows = yaml.safe_load(_DATASET_SETS_PATH.read_text(encoding="utf-8")) or []
+    return {
+        str(row.get("id")): row
+        for row in rows
+        if isinstance(row, dict) and row.get("id")
+    }
+
+
+def _case_matches_dataset_filter(case: dict, allowed: set[str], dataset_sets: dict[str, dict]) -> bool:
+    direct_values = {
+        str(case.get("id") or ""),
+        str(case.get("suite") or ""),
+        str(case.get("scenario") or ""),
+        str(case.get("dataset") or ""),
+        str(case.get("case_set") or ""),
+    }
+    if direct_values & allowed:
+        return True
+
+    case_tags = set(str(tag) for tag in (case.get("tags") or []))
+    if case_tags & allowed:
+        return True
+
+    for name in allowed:
+        spec = dataset_sets.get(name)
+        if not spec:
+            continue
+        if case.get("suite") in set(spec.get("suites") or []):
+            return True
+        if case.get("scenario") in set(spec.get("scenarios") or []):
+            return True
+        if case.get("id") in set(spec.get("case_ids") or []):
+            return True
+        if case_tags & set(str(tag) for tag in (spec.get("tags") or [])):
+            return True
+    return False
+
+
+def _requested_dataset_names() -> list[str]:
+    return [
+        name.strip()
+        for name in os.getenv("EVAL_TRIGGER_DATASETS", os.getenv("CHATBOT_EVAL_DATASETS", "")).split(",")
+        if name.strip()
+    ]
+
+
+def test_all_scenarios1_registry_is_frozen_baseline() -> None:
+    dataset_sets = _load_dataset_sets()
+    spec = dataset_sets.get("all_scenarios1")
+    assert spec is not None
+    assert spec.get("baseline") is True
+    assert spec.get("baseline_version") == "all_scenarios1-v1"
+
+    all_cases = yaml.safe_load(_DATASET_PATH.read_text(encoding="utf-8")) or []
+    matching_cases = [
+        case
+        for case in all_cases
+        if _case_matches_dataset_filter(case, {"all_scenarios1"}, dataset_sets)
+    ]
+    assert len(matching_cases) == spec.get("expected_case_count") == 30
 
 
 _CASES = _load_cases()
@@ -92,10 +162,67 @@ _MODEL_PROFILES = {
     "mock-scripted-baseline": {"input_cost_per_m": 0.15, "output_cost_per_m": 0.60, "latency_multiplier": 1.0},
     "mock-scripted-cheap": {"input_cost_per_m": 0.05, "output_cost_per_m": 0.20, "latency_multiplier": 0.7},
     "mock-scripted-premium": {"input_cost_per_m": 3.00, "output_cost_per_m": 15.00, "latency_multiplier": 1.4},
+    # Real model profiles — latency_multiplier=1.0 because real API latency is measured directly
+    "gpt-4o-mini": {"input_cost_per_m": 0.15, "output_cost_per_m": 0.60, "latency_multiplier": 1.0},
+    "gpt-4o": {"input_cost_per_m": 2.50, "output_cost_per_m": 10.00, "latency_multiplier": 1.0},
+    "deepseek-v4-pro": {"input_cost_per_m": 0.44, "output_cost_per_m": 0.87, "latency_multiplier": 1.0},
+    "deepseek-v4-flash": {"input_cost_per_m": 0.14, "output_cost_per_m": 0.28, "latency_multiplier": 1.0},
 }
+
+# Frontend display name → API model name + provider config.
+# The eval dashboard sends display names (e.g. "Deepseek V4"); this map
+# resolves them to actual API model IDs and connection params.
+_MODEL_NAME_MAP: dict[str, dict] = {
+    # DeepSeek V4
+    "DeepSeek V4": {"api_model": "deepseek-v4-pro", "provider": "deepseek"},
+    "DeepSeek V4 Pro": {"api_model": "deepseek-v4-pro", "provider": "deepseek"},
+    "DeepSeek V4 Flash": {"api_model": "deepseek-v4-flash", "provider": "deepseek"},
+    "Deepseek V4": {"api_model": "deepseek-v4-pro", "provider": "deepseek"},
+    "Deepseek V4 Pro": {"api_model": "deepseek-v4-pro", "provider": "deepseek"},
+    "Deepseek V4 Flash": {"api_model": "deepseek-v4-flash", "provider": "deepseek"},
+    # Direct API model names also work
+    "deepseek-v4-pro": {"api_model": "deepseek-v4-pro", "provider": "deepseek"},
+    "deepseek-v4-flash": {"api_model": "deepseek-v4-flash", "provider": "deepseek"},
+    # OpenAI
+    "GPT-4o-mini": {"api_model": "gpt-4o-mini", "provider": "openai"},
+    "GPT-4o": {"api_model": "gpt-4o", "provider": "openai"},
+    "OpenAI-4o-mini": {"api_model": "gpt-4o-mini", "provider": "openai"},
+    "OpenAI-4o": {"api_model": "gpt-4o", "provider": "openai"},
+    "gpt-4o-mini": {"api_model": "gpt-4o-mini", "provider": "openai"},
+    "gpt-4o": {"api_model": "gpt-4o", "provider": "openai"},
+}
+
+
+def _resolve_model(display_name: str) -> tuple[str, str]:
+    """Resolve display name → (api_model, provider)."""
+    entry = _MODEL_NAME_MAP.get(display_name)
+    if entry:
+        return entry["api_model"], entry["provider"]
+    if "deepseek" in display_name.lower():
+        return display_name, "deepseek"
+    return display_name, "openai"
+
+
+def _is_real_model(model_name: str) -> bool:
+    return not model_name.startswith("mock-scripted")
+
+
+def _make_eval_llm(model_name: str, case: dict) -> chat_mod.BaseLLM:
+    """Route model name to the appropriate LLM backend."""
+    if not _is_real_model(model_name):
+        return ScriptedEvalLLM(case, model_name)
+    api_model, provider = _resolve_model(model_name)
+    if provider == "deepseek":
+        return chat_mod.RealLLM(
+            model=api_model,
+            api_key=os.getenv("DEEPSEEK_API_KEY"),
+            base_url="https://api.deepseek.com",
+        )
+    return chat_mod.RealLLM(model=api_model)
 
 _RESULTS: list[dict] = []
 _RUN_START = datetime.now(timezone.utc)
+_ALLOW_FAILURES = os.getenv("CHATBOT_EVAL_ALLOW_FAILURES", "").lower() in {"1", "true", "yes"}
 
 
 def setup_module(_: Any) -> None:
@@ -173,9 +300,15 @@ class ScriptedEvalLLM(chat_mod.BaseLLM):
 @pytest.mark.parametrize("model_name", _MODEL_NAMES)
 @pytest.mark.parametrize("case", _CASES, ids=[c["id"] for c in _CASES])
 def test_chatbot_eval_case(case: dict, model_name: str) -> None:
+    if _is_real_model(model_name):
+        _, provider = _resolve_model(model_name)
+        if provider == "deepseek" and not os.getenv("DEEPSEEK_API_KEY"):
+            pytest.skip("DEEPSEEK_API_KEY not set")
+        elif provider == "openai" and not os.getenv("OPENAI_API_KEY"):
+            pytest.skip("OPENAI_API_KEY not set")
     result = asyncio.new_event_loop().run_until_complete(_run_case(case, model_name))
     _RESULTS.append(result)
-    if not result["passed"]:
+    if not result["passed"] and not _ALLOW_FAILURES:
         detail = "\n".join(
             f"- {g['name']}: {g['message']}"
             for g in result["graders"]
@@ -193,7 +326,9 @@ async def _run_case(case: dict, model_name: str) -> dict:
     field_sources: dict = {}
 
     orig_get_llm = chat_mod.get_llm
-    chat_mod.get_llm = lambda: ScriptedEvalLLM(case, model_name)
+    orig_case_id = os.environ.get("EXPENSE_EVAL_CASE_ID")
+    chat_mod.get_llm = lambda: _make_eval_llm(model_name, case)
+    os.environ["EXPENSE_EVAL_CASE_ID"] = str(case.get("id") or "")
     try:
         async with _Session() as db:
             if _case_needs_draft(case):
@@ -211,6 +346,8 @@ async def _run_case(case: dict, model_name: str) -> dict:
                 fresh = await get_draft(db, draft_id)
                 draft_fields = dict(fresh.fields or {}) if fresh else {}
                 field_sources = dict(fresh.field_sources or {}) if fresh else {}
+                if not draft_fields:
+                    draft_fields, field_sources = _draft_fields_from_events(events)
             else:
                 async for event in chat_mod.run_agent(
                     user_message="",
@@ -223,11 +360,17 @@ async def _run_case(case: dict, model_name: str) -> dict:
                     events.append(event)
     finally:
         chat_mod.get_llm = orig_get_llm
+        if orig_case_id is None:
+            os.environ.pop("EXPENSE_EVAL_CASE_ID", None)
+        else:
+            os.environ["EXPENSE_EVAL_CASE_ID"] = orig_case_id
 
     latency_ms = int((time.perf_counter() - start) * 1000 * _latency_multiplier(model_name))
-    graders = _grade_result(case, events, draft_fields, field_sources)
+    graders = _grade_result(case, events, draft_fields, field_sources, is_real_model=_is_real_model(model_name))
     passed = all(g["passed"] for g in graders)
     input_tokens, output_tokens = _estimate_tokens(case, events)
+
+    inferred_label = _infer_decision_label(events, draft_fields)
 
     return {
         "case_id": case["id"],
@@ -238,6 +381,8 @@ async def _run_case(case: dict, model_name: str) -> dict:
         "model": model_name,
         "passed": passed,
         "graders": graders,
+        "decision_label_expected": (case.get("expect") or {}).get("decision_label"),
+        "decision_label_actual": inferred_label,
         "tool_calls": event_tool_names(events),
         "subagents": event_subagents(events),
         "agent_trace_steps": _agent_trace_steps(events),
@@ -251,6 +396,27 @@ async def _run_case(case: dict, model_name: str) -> dict:
     }
 
 
+def _draft_fields_from_events(events: list[dict]) -> tuple[dict, dict]:
+    for event in reversed(events):
+        if event.get("type") == "draft_updated" and isinstance(event.get("fields"), dict):
+            return dict(event.get("fields") or {}), dict(event.get("field_sources") or {})
+
+    fields: dict = {}
+    sources: dict = {}
+    for event in events:
+        if event.get("type") != "tool_result" or event.get("name") != "update_draft_field":
+            continue
+        result = event.get("result") or {}
+        if not isinstance(result, dict) or result.get("deferred_to") or not result.get("ok"):
+            continue
+        field = result.get("field")
+        if not field:
+            continue
+        fields[str(field)] = result.get("value")
+        sources[str(field)] = result.get("source")
+    return fields, sources
+
+
 def _case_needs_draft(case: dict) -> bool:
     return case.get("scenario") == "receipt_completion"
 
@@ -262,19 +428,52 @@ def _latest_user_message(case: dict) -> str:
     return ""
 
 
+def _infer_decision_label(events: list[dict], draft_fields: dict) -> str:
+    """Infer the agent's business decision from its behavior.
+
+    PASS:             agent called update_draft_field and wrote fields
+    FLAG_FOR_HUMAN:   agent did not write, response asks user for info
+    REJECT:           agent did not write, response explains a blocker
+    """
+    tool_names = event_tool_names(events)
+    wrote = "update_draft_field" in tool_names and bool(draft_fields)
+    if wrote:
+        return "PASS"
+    text = assistant_text(events).lower()
+    reject_signals = ["已取消", "cancelled", "blocked", "不符", "不能报销", "无法报销", "拒绝报销", "净额为0", "net=0"]
+    if any(s in text for s in reject_signals):
+        return "REJECT"
+    return "FLAG_FOR_HUMAN"
+
+
+def _grade_decision_label(
+    events: list[dict], draft_fields: dict, expected_label: str,
+) -> tuple[bool, str]:
+    actual = _infer_decision_label(events, draft_fields)
+    passed = actual == expected_label
+    return passed, f"actual={actual} {'==' if passed else '!='} expected={expected_label}"
+
+
 def _grade_result(
     case: dict,
     events: list[dict],
     draft_fields: dict,
     field_sources: dict,
+    *,
+    is_real_model: bool = False,
 ) -> list[dict]:
     expect = case.get("expect") or {}
     checks: list[tuple[str, bool, str]] = []
 
     checks.append(("must_call_tools", *grade_must_call_tools(events, expect.get("must_call_tools") or [])))
     checks.append(("forbidden_tools_absent", *grade_forbidden_tools_absent(events, expect.get("forbidden_tools") or [])))
-    checks.append(("response_contains", *grade_response_contains(events, expect.get("response_contains") or [])))
-    checks.append(("response_excludes", *grade_response_excludes(events, expect.get("response_not_contains") or [])))
+
+    if not is_real_model:
+        checks.append(("response_contains", *grade_response_contains(events, expect.get("response_contains") or [])))
+        checks.append(("response_excludes", *grade_response_excludes(events, expect.get("response_not_contains") or [])))
+
+    if expect.get("decision_label"):
+        checks.append(("decision_label", *_grade_decision_label(events, draft_fields, expect["decision_label"])))
 
     if expect.get("required_subagents"):
         checks.append(("required_subagents", *grade_required_subagents(events, expect["required_subagents"])))
@@ -288,6 +487,8 @@ def _grade_result(
         checks.append(("field_sources_include", *grade_field_sources_include(field_sources, expect["field_sources_include"])))
     if expect.get("tool_args"):
         checks.append(("tool_args", *grade_tool_args(events, expect["tool_args"])))
+    if expect.get("trace_shape_tools"):
+        checks.append(("trace_shape", *grade_trace_shape(events, expect["trace_shape_tools"])))
     if expect.get("no_hallucinated_policy"):
         called_policy = "get_policy_rules" in event_tool_names(events)
         checks.append(("no_hallucinated_policy", called_policy, f"called_policy={called_policy}"))
@@ -313,12 +514,20 @@ def _estimate_tokens(case: dict, events: list[dict]) -> tuple[int, int]:
     return max(1, input_chars // 4), max(1, output_chars // 4)
 
 
+def _model_profile(model_name: str) -> dict:
+    """Resolve display name to cost/latency profile."""
+    if model_name in _MODEL_PROFILES:
+        return _MODEL_PROFILES[model_name]
+    api_model, _ = _resolve_model(model_name)
+    return _MODEL_PROFILES.get(api_model, _MODEL_PROFILES["mock-scripted-baseline"])
+
+
 def _latency_multiplier(model_name: str) -> float:
-    return float(_MODEL_PROFILES.get(model_name, _MODEL_PROFILES["mock-scripted-baseline"]).get("latency_multiplier", 1.0))
+    return float(_model_profile(model_name).get("latency_multiplier", 1.0))
 
 
 def _estimate_cost(model_name: str, input_tokens: int, output_tokens: int) -> float:
-    profile = _MODEL_PROFILES.get(model_name, _MODEL_PROFILES["mock-scripted-baseline"])
+    profile = _model_profile(model_name)
     cost = (
         input_tokens / 1_000_000 * profile["input_cost_per_m"]
         + output_tokens / 1_000_000 * profile["output_cost_per_m"]
@@ -330,6 +539,8 @@ def _write_matrix_snapshot() -> None:
     finished = datetime.now(timezone.utc)
     by_model: dict[str, dict] = {}
     by_suite: dict[str, dict] = {}
+    requested_datasets = _requested_dataset_names()
+    dataset_name = ",".join(requested_datasets) if requested_datasets else "full_chatbot_expense_assistant"
 
     for model in sorted({r["model"] for r in _RESULTS}):
         rows = [r for r in _RESULTS if r["model"] == model]
@@ -343,17 +554,15 @@ def _write_matrix_snapshot() -> None:
         "started_at": _RUN_START.isoformat(),
         "finished_at": finished.isoformat(),
         "dataset": str(_DATASET_PATH.name),
+        "dataset_name": dataset_name,
+        "dataset_case_count": len(_CASES),
         "run_target": os.getenv("EVAL_TRIGGER_COMPONENT", "unified_expense_assistant"),
         "requested_models": [
             name.strip()
             for name in os.getenv("EVAL_TRIGGER_MODELS", ",".join(_MODEL_NAMES)).split(",")
             if name.strip()
         ],
-        "requested_datasets": [
-            name.strip()
-            for name in os.getenv("EVAL_TRIGGER_DATASETS", os.getenv("CHATBOT_EVAL_DATASETS", "")).split(",")
-            if name.strip()
-        ],
+        "requested_datasets": requested_datasets,
         "total_cases": len(_CASES),
         "models": _MODEL_NAMES,
         "by_model": by_model,
@@ -361,6 +570,7 @@ def _write_matrix_snapshot() -> None:
         "results": _RESULTS,
     }
     _OUT_PATH.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    _post_eval_run(payload, dataset_name)
 
     lines = [
         "",
@@ -377,6 +587,45 @@ def _write_matrix_snapshot() -> None:
     lines.append(f"  snapshot: {_OUT_PATH}")
     lines.append("═" * 64)
     sys.stderr.write("\n".join(lines) + "\n")
+
+
+def _post_eval_run(matrix_payload: dict, dataset_name: str) -> None:
+    total = len(_RESULTS)
+    passed = sum(1 for r in _RESULTS if r.get("passed"))
+    run_payload = {
+        "started_at": matrix_payload["started_at"],
+        "finished_at": matrix_payload["finished_at"],
+        "total_cases": total,
+        "passed_cases": passed,
+        "pass_rate": round(passed / total, 4) if total else 0.0,
+        "results": _RESULTS,
+        "trigger": "pytest",
+        "metadata": {
+            "component": matrix_payload["run_target"],
+            "model": ",".join(_MODEL_NAMES),
+            "models": _MODEL_NAMES,
+            "dataset": dataset_name,
+            "dataset_name": dataset_name,
+            "dataset_file": str(_DATASET_PATH.name),
+            "dataset_case_count": len(_CASES),
+            "requested_datasets": matrix_payload["requested_datasets"],
+            "prompt_version": os.getenv("EVAL_PROMPT_VERSION", "v1"),
+        },
+    }
+    api_url = os.environ.get("EVAL_API_URL", "http://localhost:8000/api/eval/runs")
+    try:
+        req = urllib.request.Request(
+            api_url,
+            data=json.dumps(run_payload).encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            sys.stderr.write(f"  ✓ Chatbot eval run posted to Observatory ({resp.status})\n")
+    except (urllib.error.URLError, OSError, TimeoutError):
+        out_path = Path(tempfile.gettempdir()) / "chatbot_eval_last_run.json"
+        out_path.write_text(json.dumps(run_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        sys.stderr.write(f"  ⚠ Observatory API unreachable. Chatbot eval run saved to: {out_path}\n")
 
 
 def _aggregate_rows(rows: list[dict]) -> dict:

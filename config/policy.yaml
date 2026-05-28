@@ -48,3 +48,12 @@ tolerance:
   warning_threshold: 50    # 超标 ≤ 此值为B级警告通过
   reject_above: 50         # 超标 > 此值为C级拒绝
   percentage_mode: false   # true则用百分比，false用绝对值
+
+# Data source trust hierarchy (higher = more trusted).
+# Used by compliance and ambiguity detection when evidence conflicts or a
+# borderline amount came from a low-trust extraction path.
+field_source_trust:
+  api: 1.0
+  user_typed: 0.9
+  ocr: 0.6
+  unknown: 0.5

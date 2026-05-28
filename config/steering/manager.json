@@ -1,0 +1,8 @@
+[
+  {
+    "id": "batch_approval_context",
+    "scenario": "Manager asks about the pending approval queue.",
+    "expected_behavior": "Call get_pending_approval_queue. Present a prioritized summary by risk tier, total amount, oldest pending item, and highlight T3/T4 items first.",
+    "wrong_behavior": "List every item without prioritization or summary."
+  }
+]

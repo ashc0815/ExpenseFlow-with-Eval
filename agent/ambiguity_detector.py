@@ -25,6 +25,7 @@ from datetime import timedelta
 from typing import Optional
 
 from config import ConfigLoader
+from backend.services.field_source_trust import field_source_trust_score
 from models.expense import AmbiguityResult, Employee, LLMReviewResult, LineItem, RuleResult
 from rules.policy_engine import PolicyEngine
 
@@ -184,6 +185,7 @@ class AmbiguityDetector:
         employee: Employee,
         rule_results: list[RuleResult],
         history: list[LineItem],
+        fraud_signals: Optional[list[dict]] = None,
     ) -> AmbiguityResult:
         """对单行项目进行模糊条件评分。
 
@@ -214,9 +216,24 @@ class AmbiguityDetector:
         # ---- 2. 金额边界 (20%) ----
         score_boundary = self._score_amount_boundary(line_item, employee)
         factors["amount_boundary"] = score_boundary
+        low_trust_boundary_boost = 0.0
         if score_boundary > 0:
             triggered.append("amount_boundary")
             explanations.append("金额处于限额边界(90%-110%)")
+            field_sources = getattr(line_item, "field_sources", {}) or {}
+            if "amount" in field_sources:
+                trust_config = (self._loader.get("policy") or {}).get("field_source_trust", {})
+                amount_source = field_sources.get("amount")
+                normalized_source, source_trust = field_source_trust_score(
+                    amount_source,
+                    trust_config,
+                )
+                if source_trust < 0.7:
+                    low_trust_boundary_boost = 10.0
+                    triggered.append("field_source_trust")
+                    explanations.append(
+                        f"金额来源{amount_source}(归一化={normalized_source}, 信任度{source_trust:.1f})"
+                    )
 
         # ---- 3. 模式异常 (25%) ----
         score_pattern = self._score_pattern_anomaly(line_item, history)
@@ -248,6 +265,7 @@ class AmbiguityDetector:
         total_score = sum(
             factors[k] * _WEIGHTS[k] for k in _WEIGHTS
         )
+        total_score += low_trust_boundary_boost
         total_score = round(min(100.0, max(0.0, total_score)), 1)
 
         # ---- 建议 ----
