@@ -1,0 +1,259 @@
+schema_version: 1
+provider_domain: ctrip_booking
+provider_mode: mock
+default_employee_id: emp_dev
+fixtures:
+  - fixture_id: ctrip_gold_hotel_shenzhen_680
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-HOTEL-SZ-680
+        aliases: [ctrip-hotel-001]
+        booking_type: hotel
+        status: active
+        date: "2026-05-09"
+        check_in: "2026-05-09"
+        check_out: "2026-05-10"
+        merchant: 携程旅行
+        vendor: 深圳南山商务酒店
+        hotel: 深圳南山商务酒店
+        city: 深圳
+        amount: 680.00
+        refund_amount: 0.00
+        net_amount: 680.00
+        currency: CNY
+        invoice_status: issued
+        invoice_available: true
+
+  - fixture_id: ctrip_gold_flight_shanghai_shenzhen_1280
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-FLIGHT-SHA-SZX-1280
+        aliases: [ctrip-flight-001]
+        booking_type: flight
+        status: active
+        date: "2026-05-08"
+        departure_date: "2026-05-08"
+        merchant: 携程旅行
+        vendor: 中国东方航空
+        route: 上海虹桥 -> 深圳宝安
+        departure_city: 上海
+        arrival_city: 深圳
+        amount: 1280.00
+        refund_amount: 0.00
+        net_amount: 1280.00
+        currency: CNY
+        invoice_status: pending
+        invoice_available: false
+
+  - fixture_id: ctrip_gold_hotel_beijing_920
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-HOTEL-BJ-920
+        booking_type: hotel
+        status: active
+        date: "2026-05-12"
+        check_in: "2026-05-12"
+        check_out: "2026-05-13"
+        merchant: 携程旅行
+        vendor: 北京国贸商务酒店
+        hotel: 北京国贸商务酒店
+        city: 北京
+        amount: 920.00
+        refund_amount: 0.00
+        net_amount: 920.00
+        currency: CNY
+        invoice_status: issued
+        invoice_available: true
+
+  - fixture_id: ctrip_gold_train_hangzhou_shanghai_268
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-TRAIN-HZ-SH-268
+        booking_type: train
+        status: active
+        date: "2026-05-14"
+        departure_date: "2026-05-14"
+        merchant: 携程旅行
+        vendor: 中国铁路
+        route: 杭州东 -> 上海虹桥
+        departure_city: 杭州
+        arrival_city: 上海
+        amount: 268.00
+        refund_amount: 0.00
+        net_amount: 268.00
+        currency: CNY
+        invoice_status: issued
+        invoice_available: true
+
+  - fixture_id: ctrip_missing_amount_multiple_hotels
+    behavior: multiple_candidates
+    candidates:
+      - booking_id: CTRIP-HOTEL-SZ-680
+        booking_type: hotel
+        status: active
+        date: "2026-05-09"
+        city: 深圳
+        hotel: 深圳南山商务酒店
+        amount: 680.00
+        refund_amount: 0.00
+        net_amount: 680.00
+        currency: CNY
+      - booking_id: CTRIP-HOTEL-SZ-720
+        booking_type: hotel
+        status: active
+        date: "2026-05-09"
+        city: 深圳
+        hotel: 深圳科技园酒店
+        amount: 720.00
+        refund_amount: 0.00
+        net_amount: 720.00
+        currency: CNY
+
+  - fixture_id: ctrip_conflict_amount_hotel_680_claim_760
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-HOTEL-SZ-680
+        booking_type: hotel
+        status: active
+        date: "2026-05-09"
+        city: 深圳
+        hotel: 深圳南山商务酒店
+        amount: 680.00
+        refund_amount: 0.00
+        net_amount: 680.00
+        currency: CNY
+
+  - fixture_id: ctrip_conflict_date_hotel_20260509
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-HOTEL-SZ-DATE-001
+        booking_type: hotel
+        status: active
+        date: "2026-05-09"
+        check_in: "2026-05-09"
+        check_out: "2026-05-10"
+        city: 深圳
+        hotel: 深圳南山商务酒店
+        amount: 680.00
+        refund_amount: 0.00
+        net_amount: 680.00
+        currency: CNY
+
+  - fixture_id: ctrip_conflict_city_beijing_claim_shenzhen
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-HOTEL-BJ-CITY-001
+        booking_type: hotel
+        status: active
+        date: "2026-05-09"
+        city: 北京
+        hotel: 北京朝阳商务酒店
+        amount: 680.00
+        refund_amount: 0.00
+        net_amount: 680.00
+        currency: CNY
+
+  - fixture_id: ctrip_multiple_same_amount
+    behavior: multiple_candidates
+    candidates:
+      - booking_id: CTRIP-HOTEL-SZ-680-A
+        booking_type: hotel
+        status: active
+        date: "2026-05-09"
+        city: 深圳
+        hotel: 深圳南山商务酒店
+        amount: 680.00
+        net_amount: 680.00
+        currency: CNY
+      - booking_id: CTRIP-HOTEL-SZ-680-B
+        booking_type: hotel
+        status: active
+        date: "2026-05-09"
+        city: 深圳
+        hotel: 深圳湾商务酒店
+        amount: 680.00
+        net_amount: 680.00
+        currency: CNY
+
+  - fixture_id: ctrip_cancelled_full_refund_900
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-HOTEL-HZ-CANCEL-900
+        aliases: [ctrip-hotel-cancelled-001]
+        booking_type: hotel
+        status: cancelled
+        date: "2026-05-10"
+        city: 杭州
+        hotel: 杭州西湖商务酒店
+        amount: 900.00
+        refund_amount: 900.00
+        net_amount: 0.00
+        currency: CNY
+        invoice_status: cancelled
+        invoice_available: false
+
+  - fixture_id: ctrip_partial_refund_1200_net_800
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-FLIGHT-REFUND-800
+        booking_type: flight
+        status: partially_refunded
+        date: "2026-05-16"
+        route: 上海虹桥 -> 北京首都
+        amount: 1200.00
+        refund_amount: 400.00
+        net_amount: 800.00
+        currency: CNY
+        invoice_status: adjusted
+
+  - fixture_id: ctrip_rebooked_old_to_current
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-HOTEL-OLD-001
+        aliases: [ctrip-hotel-old-001]
+        booking_type: hotel
+        status: rebooked
+        original_booking_id: CTRIP-HOTEL-OLD-001
+        current_booking_id: CTRIP-HOTEL-SZ-680
+        date: "2026-05-09"
+        city: 深圳
+        hotel: 深圳南山商务酒店
+        amount: 680.00
+        refund_amount: 0.00
+        net_amount: 680.00
+        currency: CNY
+
+  - fixture_id: ctrip_changed_flight_uses_current
+    behavior: ok
+    candidates:
+      - booking_id: CTRIP-FLIGHT-CHANGE-OLD
+        booking_type: flight
+        status: changed
+        original_booking_id: CTRIP-FLIGHT-CHANGE-OLD
+        current_booking_id: CTRIP-FLIGHT-CHANGE-CURRENT
+        date: "2026-05-18"
+        route: 上海虹桥 -> 广州白云
+        amount: 980.00
+        change_fee: 80.00
+        refund_amount: 0.00
+        net_amount: 980.00
+        currency: CNY
+
+  - fixture_id: ctrip_not_configured
+    behavior: not_configured
+    candidates: []
+    error: CTRIP_PROVIDER is not configured
+
+  - fixture_id: ctrip_timeout
+    behavior: timeout
+    candidates: []
+    error: Mock timeout after 8000ms
+
+  - fixture_id: ctrip_always_empty
+    behavior: not_found
+    candidates: []
+
+  - fixture_id: ctrip_malformed_response
+    behavior: malformed_response
+    candidates: []
+    raw_response: "{not-json"

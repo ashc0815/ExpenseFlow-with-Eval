@@ -21,6 +21,13 @@
     "wrong_behavior": "Pick the first result and auto-fill the draft without asking."
   },
   {
+    "id": "external_evidence_needs_clarification",
+    "scenario": "External evidence lookup cannot uniquely identify one reimbursement record.",
+    "user_message": "帮我查一下报销记录，信息我不太记得了",
+    "expected_behavior": "Pause draft writing and ask for the specific missing fields needed to disambiguate, such as order/trip ID, date, amount, city/route/merchant, or cancellation/refund status.",
+    "wrong_behavior": "Tell the user how many times tools were called, keep retrying similar searches, or auto-fill a guess."
+  },
+  {
     "id": "refuse_state_change",
     "scenario": "User asks the assistant to submit or approve an expense.",
     "user_message": "帮我提交这个报销单",

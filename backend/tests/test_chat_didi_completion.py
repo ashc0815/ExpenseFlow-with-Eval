@@ -50,6 +50,7 @@ def test_quick_chat_didi_order_fills_draft_without_ocr(monkeypatch) -> None:
 
     tool_names = [e["name"] for e in result["events"] if e["type"] == "tool_call"]
     assert tool_names[0] == "lookup_didi_trip"
+    assert "lookup_card_transaction" in tool_names
     assert "extract_receipt_fields" not in tool_names
     assert "update_draft_field" in tool_names
 
@@ -60,7 +61,7 @@ def test_quick_chat_didi_order_fills_draft_without_ocr(monkeypatch) -> None:
     assert fields["date"] == "2026-05-08"
     assert fields["category"] == "transport"
     assert "公司 -> 虹桥机场" in fields["description"]
-    assert sources["amount"] == "didi_mock"
+    assert sources["amount"] == "didi_card_match"
 
     subagents = [e["subagent"] for e in result["events"] if e["type"] == "subagent_step"]
     assert "evidence-reconciler" in subagents
@@ -132,8 +133,11 @@ def test_external_evidence_pauses_for_user_after_five_unsuitable_tool_calls(monk
     assert not any(e["type"] == "error" for e in result["events"])
 
     final_text = " ".join(e.get("text", "") for e in result["events"] if e["type"] == "assistant_text")
-    assert "尝试 5 次" in final_text
-    assert "请确认" in final_text
+    assert "尝试 5 次" not in final_text
+    assert "请补充" in final_text
+    assert "订单号" in final_text
+    assert "消费/出行日期" in final_text
+    assert "城市" in final_text
     assert "你回复后" in final_text
     assert result["events"][-1]["type"] == "message_end"
     assert result["events"][-1]["stop_reason"] == "needs_user_clarification"

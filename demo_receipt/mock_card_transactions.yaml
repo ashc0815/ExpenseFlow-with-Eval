@@ -1,0 +1,266 @@
+schema_version: 1
+provider_domain: card_transaction
+provider_mode: mock
+default_employee_id: emp_dev
+fixtures:
+  - fixture_id: card_gold_hotel_shenzhen_680
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-SZ-HOTEL-680
+        aliases: [card-003]
+        status: posted
+        date: "2026-05-09"
+        merchant: SHENZHEN HOTEL
+        amount: 680.00
+        refund_amount: 0.00
+        net_amount: 680.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_gold_flight_ctrip_1280
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-CTRIP-FLIGHT-1280
+        aliases: [card-002]
+        status: posted
+        date: "2026-05-08"
+        merchant: CTRIP.COM
+        amount: 1280.00
+        refund_amount: 0.00
+        net_amount: 1280.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_gold_hotel_beijing_920
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-BJ-HOTEL-920
+        status: posted
+        date: "2026-05-12"
+        merchant: BEIJING HOTEL
+        amount: 920.00
+        refund_amount: 0.00
+        net_amount: 920.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_gold_train_ctrip_268
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-CTRIP-TRAIN-268
+        status: posted
+        date: "2026-05-14"
+        merchant: CTRIP.COM RAIL
+        amount: 268.00
+        refund_amount: 0.00
+        net_amount: 268.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_gold_didi_shanghai_86
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-DIDI-SH-86
+        aliases: [card-001]
+        status: posted
+        date: "2026-05-08"
+        merchant: DIDI CHUXING
+        amount: 86.00
+        refund_amount: 0.00
+        net_amount: 86.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_gold_didi_shenzhen_54
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-DIDI-SZ-54
+        status: posted
+        date: "2026-05-10"
+        merchant: DIDI CHUXING
+        amount: 54.00
+        refund_amount: 0.00
+        net_amount: 54.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_gold_didi_beijing_42
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-DIDI-BJ-42
+        status: posted
+        date: "2026-05-12"
+        merchant: DIDI CHUXING
+        amount: 42.00
+        refund_amount: 0.00
+        net_amount: 42.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_gold_meal_pita_228_92
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-MEAL-PITA-22892
+        status: posted
+        date: "2017-05-04"
+        merchant: PITA PITA LOMBARD
+        amount: 228.92
+        refund_amount: 0.00
+        net_amount: 228.92
+        currency: USD
+        card_last4: "8414"
+
+  - fixture_id: card_gold_retail_indah_60_30
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-RETAIL-INDAH-6030
+        status: posted
+        date: "2018-10-19"
+        merchant: INDAH GIFT HOME DECO
+        amount: 60.30
+        refund_amount: 0.00
+        net_amount: 60.30
+        currency: MYR
+        card_last4: "1888"
+
+  - fixture_id: card_gold_team_dinner_mitasu_780_45
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-MEAL-MITASU-78045
+        status: posted
+        date: "2018-06-29"
+        merchant: MITASU JAPANESE RESTAURANT
+        amount: 780.45
+        refund_amount: 0.00
+        net_amount: 780.45
+        currency: MYR
+        card_last4: "3042"
+
+  - fixture_id: card_missing_amount_multiple
+    behavior: multiple_candidates
+    candidates:
+      - transaction_id: CARD-DIDI-SH-86
+        status: posted
+        date: "2026-05-08"
+        merchant: DIDI CHUXING
+        amount: 86.00
+        net_amount: 86.00
+        currency: CNY
+        card_last4: "1888"
+      - transaction_id: CARD-CTRIP-FLIGHT-1280
+        status: posted
+        date: "2026-05-08"
+        merchant: CTRIP.COM
+        amount: 1280.00
+        net_amount: 1280.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_conflict_amount_680
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-SZ-HOTEL-680
+        status: posted
+        date: "2026-05-09"
+        merchant: SHENZHEN HOTEL
+        amount: 680.00
+        net_amount: 680.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_conflict_date_20260511
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-SZ-HOTEL-DATE-001
+        status: posted
+        date: "2026-05-11"
+        merchant: SHENZHEN HOTEL
+        amount: 680.00
+        net_amount: 680.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_conflict_merchant_unrelated
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-UNRELATED-680
+        status: posted
+        date: "2026-05-09"
+        merchant: APPLE STORE
+        amount: 680.00
+        net_amount: 680.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_multiple_same_amount
+    behavior: multiple_candidates
+    candidates:
+      - transaction_id: CARD-SZ-HOTEL-680-A
+        status: posted
+        date: "2026-05-09"
+        merchant: SHENZHEN HOTEL
+        amount: 680.00
+        net_amount: 680.00
+        currency: CNY
+        card_last4: "1888"
+      - transaction_id: CARD-CTRIP-HOTEL-680-B
+        status: posted
+        date: "2026-05-09"
+        merchant: CTRIP.COM
+        amount: 680.00
+        net_amount: 680.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_cancelled_full_refund_900
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-HZ-HOTEL-CHARGE-900
+        status: refunded
+        date: "2026-05-10"
+        merchant: HANGZHOU HOTEL
+        amount: 900.00
+        refund_amount: 900.00
+        net_amount: 0.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_partial_refund_net_800
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-CTRIP-PARTIAL-NET-800
+        status: adjusted
+        date: "2026-05-16"
+        merchant: CTRIP.COM
+        amount: 1200.00
+        refund_amount: 400.00
+        net_amount: 800.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_changed_flight_980
+    behavior: ok
+    candidates:
+      - transaction_id: CARD-CTRIP-CHANGE-980
+        status: posted
+        date: "2026-05-18"
+        merchant: CTRIP.COM
+        amount: 980.00
+        refund_amount: 0.00
+        net_amount: 980.00
+        currency: CNY
+        card_last4: "1888"
+
+  - fixture_id: card_always_empty
+    behavior: not_found
+    candidates: []
+
+  - fixture_id: card_timeout
+    behavior: timeout
+    candidates: []
+    error: Mock card provider timeout after 8000ms
+
+  - fixture_id: card_auth_error
+    behavior: auth_error
+    candidates: []
+    error: Mock card provider credentials expired

@@ -1,0 +1,15 @@
+- id: all_scenarios1
+  name: All Scenarios 1 Baseline
+  display_name: all_scenarios1 baseline
+  description: "Frozen 30-case baseline covering golden path, missing field, conflict, blocked, and selected longtail cases."
+  baseline: true
+  baseline_version: all_scenarios1-v1
+  frozen_at: "2026-05-26"
+  expected_case_count: 30
+  review_status: accepted_baseline
+  review_notes: "Human-reviewed cases are accepted as product-usable. Verbose user-facing replies are tracked as a separate UX prompt refinement, not a baseline failure."
+  suites:
+    - scenario_batch_30
+  tags:
+    - batch30
+  notes: "Use this set as Run A / baseline when comparing model, prompt, or dataset changes against the first curated expense-assistant scenario batch."

@@ -14,59 +14,7 @@ from typing import Any, Optional
 
 import httpx
 
-
-_LOCAL_DIDI_TRIPS = [
-    {
-        "trip_id": "didi-001",
-        "date": "2026-05-08",
-        "merchant": "滴滴出行",
-        "amount": 86.0,
-        "currency": "CNY",
-        "city": "上海",
-        "from": "公司",
-        "to": "虹桥机场",
-        "invoice_status": "missing",
-        "invoice_available": False,
-    },
-    {
-        "trip_id": "didi-002",
-        "date": "2026-05-10",
-        "merchant": "滴滴出行",
-        "amount": 54.0,
-        "currency": "CNY",
-        "city": "深圳",
-        "from": "深圳宝安机场",
-        "to": "南山商务酒店",
-        "invoice_status": "issued",
-        "invoice_available": True,
-    },
-]
-
-
-def _matches_lookup(candidate: dict, args: dict) -> bool:
-    order_arg = args.get("order_id") or args.get("trip_id")
-    if order_arg and str(candidate.get("trip_id")) != str(order_arg):
-        return False
-
-    date_arg = args.get("date")
-    if date_arg and candidate.get("date") != date_arg:
-        return False
-
-    amount_arg = args.get("amount")
-    if amount_arg is not None:
-        try:
-            if abs(float(candidate.get("amount", 0)) - float(amount_arg)) > 1.0:
-                return False
-        except (TypeError, ValueError):
-            return False
-
-    city = str(args.get("city") or "").lower()
-    if city:
-        haystack = " ".join(str(v) for v in candidate.values()).lower()
-        if city not in haystack:
-            return False
-
-    return True
+from backend.services.external_evidence_fixtures import lookup_fixture_evidence
 
 
 def _provider_mode() -> str:
@@ -83,14 +31,6 @@ def _mcp_url() -> Optional[str]:
     return None
 
 
-def _confidence_for(matches: list[dict]) -> float:
-    if len(matches) == 1:
-        return 0.95
-    if matches:
-        return 0.55
-    return 0.0
-
-
 async def lookup_didi_trip(args: dict) -> dict:
     """Lookup Didi trip evidence using the configured provider."""
     mode = _provider_mode()
@@ -100,14 +40,7 @@ async def lookup_didi_trip(args: dict) -> dict:
 
 
 def _lookup_didi_trip_local(args: dict) -> dict:
-    matches = [c for c in _LOCAL_DIDI_TRIPS if _matches_lookup(c, args)]
-    return {
-        "source": "didi_mock",
-        "provider": "local_mock",
-        "query": args,
-        "candidates": matches,
-        "confidence": _confidence_for(matches),
-    }
+    return lookup_fixture_evidence("didi", args)
 
 
 async def _lookup_didi_trip_mcp_sandbox(args: dict) -> dict:

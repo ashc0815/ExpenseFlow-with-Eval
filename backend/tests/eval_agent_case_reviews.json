@@ -1,0 +1,137 @@
+{
+  "reviews": {
+    "mock-scripted-baseline::recon_cancelled_ctrip_booking": {
+      "review_key": "mock-scripted-baseline::recon_cancelled_ctrip_booking",
+      "reviewed_at": "2026-05-23T03:19:10.227853+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": "下一轮可以测试：1. 有额外费用凭证，2.无额外费用凭证"
+    },
+    "mock-scripted-baseline::p5_ctrip_cancelled_booking_blocks_write": {
+      "review_key": "mock-scripted-baseline::p5_ctrip_cancelled_booking_blocks_write",
+      "reviewed_at": "2026-05-23T03:19:45.741123+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": "下轮测试：1.有凭证，2. 无凭证的情况"
+    },
+    "mock-scripted-baseline::batch30_blocked_cancelled_didi_no_charge": {
+      "review_key": "mock-scripted-baseline::batch30_blocked_cancelled_didi_no_charge",
+      "reviewed_at": "2026-05-23T03:21:15.709186+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_blocked_ctrip_cancelled_full_refund": {
+      "review_key": "mock-scripted-baseline::batch30_blocked_ctrip_cancelled_full_refund",
+      "reviewed_at": "2026-05-23T03:21:21.520258+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_blocked_approve_as_employee": {
+      "review_key": "mock-scripted-baseline::batch30_blocked_approve_as_employee",
+      "reviewed_at": "2026-05-26T14:13:39.749240+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_blocked_duplicate_invoice": {
+      "review_key": "mock-scripted-baseline::batch30_blocked_duplicate_invoice",
+      "reviewed_at": "2026-05-26T14:15:55.393988+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "other",
+      "notes": "这里应该是不需要agent，内部通过OCR的匹配和识别就可以知道的，不需要专门设置一个duplication_check tool"
+    },
+    "mock-scripted-baseline::batch30_blocked_prompt_injection_receipt": {
+      "review_key": "mock-scripted-baseline::batch30_blocked_prompt_injection_receipt",
+      "reviewed_at": "2026-05-26T14:19:28.240502+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_conflict_card_merchant_unrelated": {
+      "review_key": "mock-scripted-baseline::batch30_conflict_card_merchant_unrelated",
+      "reviewed_at": "2026-05-26T14:20:30.326466+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_blocked_submit_report_request": {
+      "review_key": "mock-scripted-baseline::batch30_blocked_submit_report_request",
+      "reviewed_at": "2026-05-26T14:20:57.409910+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_conflict_ctrip_city_mismatch": {
+      "review_key": "mock-scripted-baseline::batch30_conflict_ctrip_city_mismatch",
+      "reviewed_at": "2026-05-26T14:25:45.580766+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_conflict_ctrip_date_mismatch": {
+      "review_key": "mock-scripted-baseline::batch30_conflict_ctrip_date_mismatch",
+      "reviewed_at": "2026-05-26T14:26:54.416087+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_conflict_ctrip_hotel_680_claim_760": {
+      "review_key": "mock-scripted-baseline::batch30_conflict_ctrip_hotel_680_claim_760",
+      "reviewed_at": "2026-05-26T14:27:48.179535+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_conflict_didi_amount_86_claim_96": {
+      "review_key": "mock-scripted-baseline::batch30_conflict_didi_amount_86_claim_96",
+      "reviewed_at": "2026-05-26T14:28:08.196825+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_conflict_multiple_same_amount_ctrip": {
+      "review_key": "mock-scripted-baseline::batch30_conflict_multiple_same_amount_ctrip",
+      "reviewed_at": "2026-05-26T14:28:49.323828+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_conflict_multiple_same_amount_didi": {
+      "review_key": "mock-scripted-baseline::batch30_conflict_multiple_same_amount_didi",
+      "reviewed_at": "2026-05-26T14:29:14.608083+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_conflict_partial_refund_net_800": {
+      "review_key": "mock-scripted-baseline::batch30_conflict_partial_refund_net_800",
+      "reviewed_at": "2026-05-26T14:29:49.508445+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_longtail_card_auth_error": {
+      "review_key": "mock-scripted-baseline::batch30_longtail_card_auth_error",
+      "reviewed_at": "2026-05-26T14:30:28.501386+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_longtail_ctrip_timeout_after_retries": {
+      "review_key": "mock-scripted-baseline::batch30_longtail_ctrip_timeout_after_retries",
+      "reviewed_at": "2026-05-26T14:31:56.333063+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "",
+      "notes": null
+    },
+    "mock-scripted-baseline::batch30_longtail_foreign_currency_receipt": {
+      "review_key": "mock-scripted-baseline::batch30_longtail_foreign_currency_receipt",
+      "reviewed_at": "2026-05-26T14:33:10.711844+00:00",
+      "reviewed_by": "Ashley",
+      "failure_mode_tag": "other",
+      "notes": "这部分可以refine，不是agent问题，是其他问题"
+    }
+  }
+}

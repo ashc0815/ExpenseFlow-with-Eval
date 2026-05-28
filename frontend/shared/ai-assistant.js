@@ -59,6 +59,8 @@
       padding:.65rem; box-shadow:0 1px 2px rgba(15,23,42,.04);
     }
     .ai-msg.assistant strong { color:#047857; font-weight:700; }
+    .ai-tool-status { color:#94a3b8; font-size:.78rem; }
+    .ai-error-text { color:#ef4444; }
     .ai-policy-card { display:flex; flex-direction:column; gap:.65rem; }
     .ai-policy-title {
       display:flex; align-items:center; justify-content:space-between; gap:.5rem;
@@ -499,11 +501,11 @@
             } else if (ev.type === "tool_call") {
               const agentLabel = ev.subagent ? esc(ev.subagent) + " · " : "";
               aDiv.innerHTML = (fullText ? renderPlainAssistantText(fullText) + "<br>" : "") +
-                '<span style="color:#94a3b8;font-size:.78rem">🔍 ' + agentLabel + esc(ev.name || "查询中") + "…</span>";
+                '<span class="ai-tool-status">🔍 ' + agentLabel + esc(ev.name || "查询中") + "…</span>";
             } else if (ev.type === "tool_result" && ev.name === "get_policy_rules") {
               activePolicy = ev.result || null;
             } else if (ev.type === "error") {
-              aDiv.innerHTML = '<span style="color:#ef4444">' + esc(ev.message) + "</span>";
+              aDiv.innerHTML = '<span class="ai-error-text">' + esc(ev.message) + "</span>";
             }
           } catch {}
         }
@@ -514,7 +516,7 @@
         chatHistory.push({ role: "assistant", content: fullText });
       }
     } catch (err) {
-      aDiv.innerHTML = '<span style="color:#ef4444">' + esc(_t("ai.request-fail")) + esc(err.message) + "</span>";
+      aDiv.innerHTML = '<span class="ai-error-text">' + esc(_t("ai.request-fail")) + esc(err.message) + "</span>";
     } finally {
       streaming = false;
       document.getElementById("ai-send-btn").disabled = false;

@@ -244,7 +244,10 @@ def grade_field_sources_include(field_sources: dict, expected_sources: dict) -> 
 def grade_tool_args(events: list[dict], expected_args: dict[str, dict]) -> tuple[bool, str]:
     """Binary check: at least one call per named tool contains expected args.
 
-    The expected dict is partial: only listed keys are checked.
+    The expected dict is partial: only listed keys are checked. For fixture_id
+    expectations, real models may query by business fields instead of naming the
+    fixture directly; in that case we also accept the paired tool_result
+    fixture_id as an equivalent match.
     """
     mismatches = []
     for tool_name, expected in (expected_args or {}).items():
@@ -258,7 +261,71 @@ def grade_tool_args(events: list[dict], expected_args: dict[str, dict]) -> tuple
             if all(call.get(k) == v for k, v in expected.items()):
                 matched = True
                 break
+        expected_fixture = expected.get("fixture_id")
+        if not matched and expected_fixture:
+            for event in events:
+                if event.get("type") != "tool_result" or event.get("name") != tool_name:
+                    continue
+                result = event.get("result") or {}
+                if isinstance(result, dict) and result.get("fixture_id") == expected_fixture:
+                    matched = True
+                    break
         if not matched:
             mismatches.append({"tool": tool_name, "expected_subset": expected, "calls": calls})
     passed = not mismatches
     return passed, f"mismatches={mismatches}"
+
+
+def grade_trace_shape(events: list[dict], required_tools: list[str]) -> tuple[bool, str]:
+    """Layer 4: verify every required tool call has a complete trace pair.
+
+    For each tool in required_tools, checks that the events contain:
+      1. A tool_call event with {type, name, input, subagent, connectors}
+      2. A matching tool_result event with {type, name, result, subagent, connectors, output_summary}
+      3. A subagent_step event for both call and result phases
+
+    This ensures the trace is complete and reproducible for debugging.
+    """
+    errors = []
+    for tool_name in required_tools:
+        calls = [e for e in events if e.get("type") == "tool_call" and e.get("name") == tool_name]
+        results = [e for e in events if e.get("type") == "tool_result" and e.get("name") == tool_name]
+        steps = [e for e in events if e.get("type") == "subagent_step" and e.get("tool") == tool_name]
+
+        if not calls:
+            errors.append(f"{tool_name}: no tool_call event")
+            continue
+
+        for call in calls:
+            missing = [k for k in ("name", "input", "subagent", "connectors") if k not in call]
+            if missing:
+                errors.append(f"{tool_name} tool_call: missing fields {missing}")
+
+        if not results:
+            is_deferred = any(
+                e.get("type") == "tool_result" and e.get("name") == tool_name
+                and isinstance(e.get("result"), dict) and e["result"].get("deferred_to")
+                for e in events
+            )
+            if not is_deferred:
+                errors.append(f"{tool_name}: no tool_result event")
+        else:
+            for res in results:
+                if "result" not in res:
+                    errors.append(f"{tool_name} tool_result: missing 'result' field")
+                if "subagent" not in res:
+                    errors.append(f"{tool_name} tool_result: missing 'subagent' field")
+                if "connectors" not in res:
+                    errors.append(f"{tool_name} tool_result: missing 'connectors' field")
+
+        call_steps = [s for s in steps if s.get("event") == "tool_call"]
+        result_steps = [s for s in steps if s.get("event") == "tool_result"]
+        if not call_steps:
+            errors.append(f"{tool_name}: no subagent_step(tool_call)")
+        if not result_steps:
+            is_write = tool_name in ("update_draft_field", "update_report_line_field")
+            if not is_write:
+                errors.append(f"{tool_name}: no subagent_step(tool_result)")
+
+    passed = not errors
+    return passed, "; ".join(errors) if errors else "all trace shapes valid"

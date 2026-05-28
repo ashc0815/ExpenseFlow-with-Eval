@@ -653,7 +653,9 @@ Example:
 
 Use this checklist when turning the design into code.
 
-- [ ] Keep `SUBAGENT_TOOL_MAP` aligned with the tool catalog above.
+- [ ] Keep `config/agents/expense_assistant.yaml` as the single source of
+      truth for subagent tool allowlists, skills, connectors, and runtime
+      tool order; derive `SUBAGENT_TOOL_MAP` from it.
 - [ ] Ensure the system prompt states that only `draft-writer` may mutate draft
       fields.
 - [ ] Normalize Ctrip, Didi, and card tool responses into the provider envelope.

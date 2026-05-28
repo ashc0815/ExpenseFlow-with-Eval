@@ -19,8 +19,7 @@ boto3>=1.34.0              # Cloudflare R2 via S3 兼容 API
 pyyaml>=6.0.1
 
 # ── LLM / OCR ────────────────────────────────────────────────────
-openai>=1.30.0             # GPT-4o RealLLM + Vision OCR
-anthropic>=0.30.0          # 预留 Anthropic 接口
+openai>=1.30.0             # GPT-4o / DeepSeek (OpenAI-compatible) RealLLM + Vision OCR
 Pillow>=10.4.0
 imagehash>=4.3.1
 

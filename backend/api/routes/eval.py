@@ -13,6 +13,12 @@ Endpoints:
   GET   /api/eval/saturation        Per-component review stats: total /
                                     reviewed / unreviewed / failure-mode
                                     breakdown. Hamel saturation guideline.
+  GET   /api/eval/agent-case-reviews
+                                    Agent eval cases that should be manually
+                                    reviewed (failed / FLAG / REJECT /
+                                    guardrail issues)
+  PATCH /api/eval/agent-case-reviews/{review_key}
+                                    Mark an agent eval case as reviewed
   GET   /api/eval/stats             Aggregate stats (pass rate trend, component breakdown)
   GET   /api/eval/config            Read current eval config (6 factors)
   PUT   /api/eval/config            Update eval config
@@ -28,6 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+import yaml
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select, func, desc
@@ -53,11 +60,21 @@ class TraceReviewBody(BaseModel):
     failure_mode_tag: Optional[str] = None
     notes: Optional[str] = None
 
+
+class AgentCaseReviewBody(BaseModel):
+    """PATCH /agent-case-reviews/{review_key} payload."""
+    reviewed_by: str
+    failure_mode_tag: Optional[str] = None
+    notes: Optional[str] = None
+
 _CONFIG_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_config.json"
 _PROMPTS_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_prompts.json"
 _HUMAN_FRAUD_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_human_fraud_latest.json"
 _HUMAN_AMBIG_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_human_ambiguity_latest.json"
 _CHATBOT_MATRIX_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_chatbot_model_matrix_latest.json"
+_CHATBOT_CASES_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_datasets" / "chatbot_expense_assistant.yaml"
+_CHATBOT_DATASET_SETS_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_datasets" / "chatbot_dataset_sets.yaml"
+_AGENT_CASE_REVIEWS_PATH = Path(__file__).resolve().parents[2] / "tests" / "eval_agent_case_reviews.json"
 
 # B1 (judge agreement) snapshot paths — written by test_judge_agreement.py.
 # Map a logical "component" name (the same value the saturation endpoint
@@ -390,6 +407,56 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[3]
 _eval_running = False
 
 
+def _load_chatbot_cases_for_dataset_registry() -> list[dict]:
+    if not _CHATBOT_CASES_PATH.exists():
+        return []
+    return yaml.safe_load(_CHATBOT_CASES_PATH.read_text(encoding="utf-8")) or []
+
+
+def _load_chatbot_case_definitions() -> dict[str, dict]:
+    cases = _load_chatbot_cases_for_dataset_registry()
+    return {
+        str(case.get("id")): case
+        for case in cases
+        if isinstance(case, dict) and case.get("id")
+    }
+
+
+def _dataset_registry_case_count(cases: list[dict], spec: dict) -> int:
+    suites = set(spec.get("suites") or [])
+    scenarios = set(spec.get("scenarios") or [])
+    case_ids = set(spec.get("case_ids") or [])
+    tags = set(str(tag) for tag in (spec.get("tags") or []))
+
+    def _matches(case: dict) -> bool:
+        case_tags = set(str(tag) for tag in (case.get("tags") or []))
+        return (
+            case.get("suite") in suites
+            or case.get("scenario") in scenarios
+            or case.get("id") in case_ids
+            or bool(case_tags & tags)
+        )
+
+    return sum(1 for case in cases if _matches(case))
+
+
+@router.get("/chatbot/datasets")
+async def list_chatbot_datasets() -> dict:
+    """Return named unified-expense-assistant dataset sets for Run/Compare UI."""
+    cases = _load_chatbot_cases_for_dataset_registry()
+    if not _CHATBOT_DATASET_SETS_PATH.exists():
+        return {"items": []}
+    rows = yaml.safe_load(_CHATBOT_DATASET_SETS_PATH.read_text(encoding="utf-8")) or []
+    items = []
+    for row in rows:
+        if not isinstance(row, dict) or not row.get("id"):
+            continue
+        item = dict(row)
+        item["case_count"] = _dataset_registry_case_count(cases, row)
+        items.append(item)
+    return {"items": items}
+
+
 @router.post("/trigger")
 async def trigger_eval(body: dict = {}) -> dict:
     """Trigger an eval run via pytest subprocess.
@@ -397,7 +464,7 @@ async def trigger_eval(body: dict = {}) -> dict:
     Body (optional):
       component: "fraud" | "ambiguity" | "deterministic" | "unified_expense_assistant" | "all"
       models: ["OpenAI-4o-mini", ...]      # unified assistant model-matrix runner
-      datasets: []                         # reserved for future dataset filters
+      datasets: ["all_scenarios1", ...]    # unified assistant dataset-set filters
 
     Returns immediately with status; results appear in /runs after completion.
     """
@@ -454,6 +521,8 @@ async def trigger_eval(body: dict = {}) -> dict:
                 "EVAL_TRIGGER_MODELS": ",".join(requested_models),
                 "EVAL_TRIGGER_DATASETS": ",".join(requested_datasets),
             }
+            if component in ("chat", "chatbot", "expense_assistant", "unified_expense_assistant"):
+                env["CHATBOT_EVAL_ALLOW_FAILURES"] = "1"
             if requested_models and component in ("chat", "chatbot", "expense_assistant", "unified_expense_assistant"):
                 env["CHATBOT_EVAL_MODELS"] = ",".join(requested_models)
             if requested_datasets and component in ("chat", "chatbot", "expense_assistant", "unified_expense_assistant"):
@@ -523,8 +592,20 @@ async def diff_runs(run_id_a: str, run_id_b: str, db: AsyncSession = Depends(get
             case_diff.append({"case_id": cid, "a": pa, "b": pb})
 
     return {
-        "run_a": {"id": ra.id, "pass_rate": ra.pass_rate, "total": ra.total_cases, "started_at": ra.started_at.isoformat() if ra.started_at else None},
-        "run_b": {"id": rb.id, "pass_rate": rb.pass_rate, "total": rb.total_cases, "started_at": rb.started_at.isoformat() if rb.started_at else None},
+        "run_a": {
+            "id": ra.id,
+            "pass_rate": ra.pass_rate,
+            "total": ra.total_cases,
+            "started_at": ra.started_at.isoformat() if ra.started_at else None,
+            "metadata": meta_a,
+        },
+        "run_b": {
+            "id": rb.id,
+            "pass_rate": rb.pass_rate,
+            "total": rb.total_cases,
+            "started_at": rb.started_at.isoformat() if rb.started_at else None,
+            "metadata": meta_b,
+        },
         "metadata_diff": meta_diff,
         "case_diff": case_diff,
         "summary": {
@@ -686,6 +767,233 @@ async def get_human_ambiguity_eval() -> dict:
         return {"empty": True, "error": str(exc)}
 
 
+def _load_agent_case_reviews() -> dict:
+    if not _AGENT_CASE_REVIEWS_PATH.exists():
+        return {"reviews": {}}
+    try:
+        data = json.loads(_AGENT_CASE_REVIEWS_PATH.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return {"reviews": {}}
+    if not isinstance(data, dict):
+        return {"reviews": {}}
+    data.setdefault("reviews", {})
+    return data
+
+
+def _save_agent_case_reviews(data: dict) -> None:
+    data.setdefault("reviews", {})
+    _AGENT_CASE_REVIEWS_PATH.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
+def _agent_case_review_reasons(case: dict) -> list[str]:
+    reasons: list[str] = []
+    actual = case.get("decision_label_actual")
+    expected = case.get("decision_label_expected")
+
+    if case.get("passed") is False:
+        reasons.append("eval_failed")
+    if actual == "FLAG_FOR_HUMAN":
+        reasons.append("flag_for_human")
+    if actual == "REJECT":
+        reasons.append("reject")
+    if expected and actual != expected:
+        reasons.append("decision_mismatch")
+
+    for grader in case.get("graders") or []:
+        if grader.get("passed") is False:
+            name = grader.get("name") or "grader"
+            reasons.append(f"grader_failed:{name}")
+
+    return reasons
+
+
+def _agent_case_review_priority(case: dict, reasons: list[str]) -> str:
+    joined = " ".join(reasons)
+    if (
+        "eval_failed" in reasons
+        or "reject" in reasons
+        or "decision_mismatch" in reasons
+        or "forbidden" in joined
+        or "unsafe" in joined
+        or "trace_shape" in joined
+    ):
+        return "high"
+    if "flag_for_human" in reasons:
+        return "medium"
+    return "low"
+
+
+def _agent_case_review_item(
+    case: dict,
+    *,
+    run_started_at: Optional[str],
+    run_finished_at: Optional[str],
+    review: Optional[dict],
+    case_def: Optional[dict] = None,
+) -> dict:
+    reasons = _agent_case_review_reasons(case)
+    model = case.get("model") or "unknown-model"
+    case_id = case.get("case_id") or "unknown-case"
+    review_key = f"{model}::{case_id}"
+    failed_graders = [
+        g.get("name") or "grader"
+        for g in (case.get("graders") or [])
+        if g.get("passed") is False
+    ]
+    return {
+        "review_key": review_key,
+        "case_id": case_id,
+        "model": model,
+        "suite": case.get("suite"),
+        "scenario": case.get("scenario"),
+        "difficulty": case.get("difficulty"),
+        "tags": case.get("tags") or [],
+        "passed": case.get("passed"),
+        "decision_label_actual": case.get("decision_label_actual"),
+        "decision_label_expected": case.get("decision_label_expected"),
+        "subagents": case.get("subagents") or [],
+        "tool_calls": case.get("tool_calls") or [],
+        "tool_call_count": len(case.get("tool_calls") or []),
+        "agent_trace_steps": case.get("agent_trace_steps") or [],
+        "assistant_text": case.get("assistant_text"),
+        "draft_fields": case.get("draft_fields") or {},
+        "field_sources": case.get("field_sources") or {},
+        "messages": (case_def or {}).get("messages") or [],
+        "scripted_turns": (case_def or {}).get("scripted_turns") or [],
+        "expect": (case_def or {}).get("expect") or {},
+        "expected_final_text": (case_def or {}).get("final_text"),
+        "graders": case.get("graders") or [],
+        "failed_graders": failed_graders,
+        "review_reasons": reasons,
+        "review_priority": _agent_case_review_priority(case, reasons),
+        "run_started_at": run_started_at,
+        "run_finished_at": run_finished_at,
+        "reviewed_at": (review or {}).get("reviewed_at"),
+        "reviewed_by": (review or {}).get("reviewed_by"),
+        "failure_mode_tag": (review or {}).get("failure_mode_tag"),
+        "review_notes": (review or {}).get("notes"),
+    }
+
+
+@router.get("/agent-case-reviews")
+async def list_agent_case_reviews(
+    reviewed: Optional[bool] = None,
+    page_size: int = Query(50, ge=1, le=200),
+) -> dict:
+    """Return Agent Trace cases that should enter human review.
+
+    This intentionally reads from the same snapshot as the Agent Trace tab, so
+    Review Quality is connected to the actual agent eval cases instead of only
+    low-level LLM call logs.
+    """
+    if not _CHATBOT_MATRIX_PATH.exists():
+        return {
+            "empty": True,
+            "message": (
+                "No unified expense assistant model-matrix run yet. Run: "
+                "pytest backend/tests/test_chatbot_eval.py -q"
+            ),
+        }
+    try:
+        matrix = json.loads(_CHATBOT_MATRIX_PATH.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        return {"empty": True, "error": str(exc)}
+
+    reviews = _load_agent_case_reviews().get("reviews", {})
+    case_defs = _load_chatbot_case_definitions()
+    items: list[dict] = []
+    for case in matrix.get("results") or []:
+        reasons = _agent_case_review_reasons(case)
+        if not reasons:
+            continue
+        model = case.get("model") or "unknown-model"
+        case_id = case.get("case_id") or "unknown-case"
+        review_key = f"{model}::{case_id}"
+        review = reviews.get(review_key)
+        is_reviewed = review is not None and review.get("reviewed_at") is not None
+        if reviewed is True and not is_reviewed:
+            continue
+        if reviewed is False and is_reviewed:
+            continue
+        items.append(
+            _agent_case_review_item(
+                case,
+                run_started_at=matrix.get("started_at"),
+                run_finished_at=matrix.get("finished_at"),
+                review=review,
+                case_def=case_defs.get(case_id),
+            )
+        )
+
+    priority_order = {"high": 0, "medium": 1, "low": 2}
+    items.sort(
+        key=lambda item: (
+            priority_order.get(item["review_priority"], 9),
+            item.get("suite") or "",
+            item.get("case_id") or "",
+        )
+    )
+
+    all_review_items = [
+        _agent_case_review_item(
+            case,
+            run_started_at=matrix.get("started_at"),
+            run_finished_at=matrix.get("finished_at"),
+            review=reviews.get(f"{case.get('model') or 'unknown-model'}::{case.get('case_id') or 'unknown-case'}"),
+            case_def=case_defs.get(str(case.get("case_id") or "")),
+        )
+        for case in (matrix.get("results") or [])
+        if _agent_case_review_reasons(case)
+    ]
+    reviewed_count = sum(1 for item in all_review_items if item.get("reviewed_at"))
+    correct_count = sum(
+        1
+        for item in all_review_items
+        if item.get("reviewed_at") and not item.get("failure_mode_tag")
+    )
+    by_failure_mode: dict[str, int] = {}
+    for item in all_review_items:
+        tag = item.get("failure_mode_tag")
+        if item.get("reviewed_at") and tag:
+            by_failure_mode[tag] = by_failure_mode.get(tag, 0) + 1
+
+    return {
+        "source": str(_CHATBOT_MATRIX_PATH),
+        "started_at": matrix.get("started_at"),
+        "finished_at": matrix.get("finished_at"),
+        "total_cases": matrix.get("total_cases"),
+        "candidate_count": len(all_review_items),
+        "reviewed": reviewed_count,
+        "unreviewed": len(all_review_items) - reviewed_count,
+        "correct": correct_count,
+        "by_failure_mode": by_failure_mode,
+        "items": items[:page_size],
+        "page_size": page_size,
+    }
+
+
+@router.patch("/agent-case-reviews/{review_key:path}")
+async def review_agent_case(review_key: str, body: AgentCaseReviewBody) -> dict:
+    data = _load_agent_case_reviews()
+    reviews = data.setdefault("reviews", {})
+    existing = reviews.get(review_key, {})
+    existing.update(
+        {
+            "review_key": review_key,
+            "reviewed_at": datetime.now(timezone.utc).isoformat(),
+            "reviewed_by": body.reviewed_by,
+            "failure_mode_tag": body.failure_mode_tag or "",
+            "notes": body.notes,
+        }
+    )
+    reviews[review_key] = existing
+    _save_agent_case_reviews(data)
+    return existing
+
+
 @router.get("/chatbot/model-matrix")
 async def get_chatbot_model_matrix() -> dict:
     """Return the latest unified expense-assistant model matrix snapshot.
@@ -701,7 +1009,16 @@ async def get_chatbot_model_matrix() -> dict:
             ),
         }
     try:
-        return json.loads(_CHATBOT_MATRIX_PATH.read_text(encoding="utf-8"))
+        matrix = json.loads(_CHATBOT_MATRIX_PATH.read_text(encoding="utf-8"))
+        case_defs = _load_chatbot_case_definitions()
+        for result in matrix.get("results") or []:
+            case_id = str(result.get("case_id") or "")
+            case_def = case_defs.get(case_id) or {}
+            result.setdefault("messages", case_def.get("messages") or [])
+            result.setdefault("expect", case_def.get("expect") or {})
+            result.setdefault("scripted_turns", case_def.get("scripted_turns") or [])
+            result.setdefault("expected_final_text", case_def.get("final_text"))
+        return matrix
     except Exception as exc:  # noqa: BLE001
         return {"empty": True, "error": str(exc)}
 
